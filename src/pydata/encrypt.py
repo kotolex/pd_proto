@@ -18,7 +18,7 @@ def _encrypt_base(data: SupportedTypes) -> bytearray:
     result.append(int_by_type(data))
     match data:
         case bool():
-            pass  # just to leave the match and do not go to int cluse, bool is int
+            pass  # just to leave the match and do not go to int clause, bool is int
         case int() as y:
             if y < 0:
                 y = (-1) * y

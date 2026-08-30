@@ -12,5 +12,5 @@ Binary protocol for representing basic data types in Python
 8. оптимизации
 9. написать на раст/окамл
 10. хранение и язык поиска
-11. float_0, optimize float based on size -float_1, float_2 etc...
-12. optimize string with code string_compessed
+11. optimize float based on size -float_1, float_2 etc...
+12. optimize string with code string_compressed

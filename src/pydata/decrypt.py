@@ -26,12 +26,9 @@ def decode_varint(buffer: bytes) -> tuple[int, int]:
 
     for byte in buffer:
         bytes_read += 1
-        # Забираем 7 полезных бит (маска 0x7F убирает старший бит-флаг)
         number |= (byte & 0x7F) << shift
-        # Если старший бит равен 0 (проверка через И с маской 0x80), чтение окончено
         if not byte & 0x80:
             break
-        # Сдвигаем позицию для следующей семерки битов
         shift += 7
     return number, bytes_read
 

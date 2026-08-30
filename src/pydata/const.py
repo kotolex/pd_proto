@@ -6,7 +6,7 @@ PROTOCOL_VERSION = 1
 FLOAT_FORMAT = ">d"
 UTF_8 = "utf-8"
 
-SupportedTypes = None | bool | int | float | str
+SupportedTypes = None | bool | int | float | str | list | tuple | dict | set
 
 
 class SupportedType(IntEnum):
@@ -26,6 +26,10 @@ class SupportedType(IntEnum):
     INT_NEGATIVE = 11
     FLOAT = 12
     STRING = 13
+    LIST = 14
+    TUPLE = 15
+    SET = 16
+    DICT = 17
 
     @classmethod
     def all_codes(cls):
@@ -60,6 +64,22 @@ def int_by_type(value: SupportedTypes):
         if not value:
             return SupportedType.STRING_EMPTY.value
         return SupportedType.STRING.value
+    if isinstance(value, list):
+        if not value:
+            return SupportedType.LIST_EMPTY.value
+        return SupportedType.LIST.value
+    if isinstance(value, tuple):
+        if not value:
+            return SupportedType.TUPLE_EMPTY.value
+        return SupportedType.TUPLE.value
+    if isinstance(value, set):
+        if not value:
+            return SupportedType.SET_EMPTY.value
+        return SupportedType.SET.value
+    if isinstance(value, dict):
+        if not value:
+            return SupportedType.DICT_EMPTY.value
+        return SupportedType.DICT.value
     raise UnsupportedTypeError(f"Value of unsupported type -{value}-: {type(value)}")
 
 
@@ -86,4 +106,12 @@ def type_by_int(code: int) -> SupportedTypes:
         return 0.0
     if code in (SupportedType.STRING_EMPTY.value, SupportedType.STRING.value):
         return ""
+    if code in (SupportedType.LIST_EMPTY.value, SupportedType.LIST.value):
+        return []
+    if code in (SupportedType.TUPLE_EMPTY.value, SupportedType.TUPLE.value):
+        return tuple()
+    if code in (SupportedType.SET_EMPTY.value, SupportedType.SET.value):
+        return set()
+    if code in (SupportedType.DICT_EMPTY.value, SupportedType.DICT.value):
+        return {}
     raise WrongCodeError(f"Wrong code, you can use one of {SupportedType.all_codes()}")

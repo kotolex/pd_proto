@@ -14,6 +14,10 @@ class TestDecrypt(TestCase):
         self.assertEqual(True, decrypt(encrypt(True)))
         self.assertEqual(False, decrypt(encrypt(False)))
         self.assertEqual("", decrypt(encrypt("")))
+        self.assertEqual([], decrypt(encrypt([])))
+        self.assertEqual({}, decrypt(encrypt({})))
+        self.assertEqual(tuple(), decrypt(encrypt(tuple())))
+        self.assertEqual(set(), decrypt(encrypt(set())))
 
     def test_decrypt_string(self):
         self.assertEqual("stop", decrypt(b'\x01\r\x04stop'))
