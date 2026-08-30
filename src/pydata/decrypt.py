@@ -1,11 +1,24 @@
-from src.pydata.const import AllowedTypes, PROTOCOL_VERSION, type_by_int, Type
+import struct
+
+from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, SupportedType,
+                              SupportedTypes, type_by_int)
+from src.pydata.errors import EmptyDataError, ProtocolError
+
+
+def decode_float(data: bytes) -> float:
+    """
+    Decode floating point number from bytes.
+    :param data: a sequence of bytes
+    :return: floating point number
+    """
+    return struct.unpack(FLOAT_FORMAT, data)[0]
 
 
 def decode_varint(buffer: bytes) -> tuple[int, int]:
     """
-    Декодирует VarInt-представление в число.
-    :param buffer: набор байтов
-    :return: целое положительное число(или 0) и количество прочитанных байтов
+    Decodes a VarInt representation into a number
+    :param buffer: a sequence of bytes
+    :return: a non-negative integer (or 0) and the number of bytes read
     """
     number = 0
     shift = 0
@@ -23,30 +36,36 @@ def decode_varint(buffer: bytes) -> tuple[int, int]:
     return number, bytes_read
 
 
-def decrypt(bts: bytes) -> AllowedTypes:
+def decrypt(bts: bytes) -> SupportedTypes:
     """
-    Пытаемся декодировать байты в объект одного из допустимых типов
-    :param bts: байты представления
-    :return: объект одного из допустимых типов
-    :raise AttributeError в случае повреждения данных или несоответствия формату
+    Decodes bytes into an object of one of the supported types
+    :param bts: bytes representation of some object
+    :return: an object of one of the supported types
+    :raise AttributeError: in case of data corruption or protocol mismatch
     """
-    if not bytes or bts[0] != PROTOCOL_VERSION or len(bts) == 1:
-        raise AttributeError("Empty data or unsupported protocol version")
+    if len(bts) <= 1:
+        raise EmptyDataError("Empty data or unsupported protocol version")
+    if bts[0] != PROTOCOL_VERSION:
+        raise ProtocolError(f"Supported protocol version is less or equal {PROTOCOL_VERSION}")
     result = []
     index = 1
     continuation = False
     while True:
         b = bts[index]
         next_token = type_by_int(b)
-        if b >= Type.INT_POSITIVE.value:
-            if b in (Type.INT_POSITIVE.value, Type.INT_NEGATIVE.value):
+        if b >= SupportedType.INT_POSITIVE.value:
+            if b in (SupportedType.INT_POSITIVE.value, SupportedType.INT_NEGATIVE.value):
                 val, read = decode_varint(bts[index + 1:])
-                result.append(next_token*val)
-                index+=read
+                result.append(next_token * val)
+                index += read
+            elif b == SupportedType.FLOAT.value:
+                val = decode_float(bts[index + 1:index + 9])
+                result.append(val)
+                index += 9
         else:
             result.append(next_token)
         if not continuation:
             break
     if index + 1 >= len(bts):
         return result[0]
-    raise AttributeError(f"Corrupt data, parse bytes {index}, total length is {len(bts)}")
+    raise ProtocolError(f"Corrupt data, parse bytes {index}, total length is {len(bts)}")

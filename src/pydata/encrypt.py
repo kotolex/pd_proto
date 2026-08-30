@@ -1,27 +1,42 @@
-from src.pydata.const import AllowedTypes, int_by_type, PROTOCOL_VERSION
+import struct
+
+from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, SupportedTypes,
+                              int_by_type)
 
 
-def _encrypt_base(data: AllowedTypes, result: bytearray | None = None) -> bytearray:
-    if result is None:
-        result = bytearray()
+def encode_float(number: float) -> bytes:
+    """
+    Converts a standard 8-byte floating-point number into bytes
+    :param number: a standard Python floating-point number
+    :return: presentation bytes of the number
+    """
+    return struct.pack(FLOAT_FORMAT, number)
+
+
+def _encrypt_base(data: SupportedTypes) -> bytearray:
+    result = bytearray()
+    result.append(int_by_type(data))
     match data:
-        case bool() as x:
-            result.append(int_by_type(x))
+        case bool():
+            pass  # just to leave the match and do not go to int cluse, bool is int
         case int() as y:
-            result.append(int_by_type(y))
             if y < 0:
                 y = (-1) * y
             result.extend(encode_varint(y))
-        case _:
-            result.append(int_by_type(data))
+        case float() as z:
+            if z != 0.0:
+                result.extend(encode_float(z))
+        case str() as s:
+            if s:
+                pass
     return result
 
 
 def encode_varint(number: int) -> bytearray:
     """
-    Преобразует положительное целое число в байты, используя VarInt-формат.
-    :param number: целое положительное число (или 0)
-    :return: байты представления числа
+    Converts a non-negative integer into bytes using the VarInt format
+    :param number: a non-negative integer (or 0)
+    :return: presentation bytes of the number
     """
     if number < 0:
         raise ValueError("Positive numbers only!")
@@ -29,23 +44,19 @@ def encode_varint(number: int) -> bytearray:
         return bytearray([0])
     result = bytearray()
     while number > 0:
-        # Извлекаем младшие 7 бит с помощью маски 127 (0b01111111)
         byte = number & 0x7F
-        # Сдвигаем число вправо на 7 бит для следующей итерации
         number >>= 7
-        # Если после сдвига число не обнулилось, значит будут еще байты
         if number > 0:
-            # Устанавливаем старший 8-й бит в 1 с помощью маски 128 (0b10000000)
             byte |= 0x80
         result.append(byte)
     return result
 
 
-def encrypt(data: AllowedTypes) -> bytes:
+def encrypt(data: SupportedTypes) -> bytes:
     """
-    Конвертируем допустимый python тип в набор байтов
-    :param data: объект любого из допустимых типов
-    :return: байты представления
+    Converts a supported Python type into a sequence of bytes
+    :param data: an object of any allowed type
+    :return: bytes representation of data
     """
     final = bytearray()
     final.append(PROTOCOL_VERSION)

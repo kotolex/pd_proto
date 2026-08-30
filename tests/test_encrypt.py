@@ -1,7 +1,8 @@
 import random
 from unittest import TestCase, main
-from src.pydata.encrypt import encode_varint, encrypt
+
 from src.pydata.decrypt import decode_varint
+from src.pydata.encrypt import encode_float, encode_varint, encrypt
 
 
 class TestEncodeEncrypt(TestCase):
@@ -25,11 +26,23 @@ class TestEncodeEncrypt(TestCase):
             self.assertEqual(i, decode_varint(bytes(encode_varint(i)))[0])
 
     def test_encrypt(self):
-        self.assertEqual(b'\x01\x00', encrypt(None))
-        self.assertEqual(b'\x01\x01', encrypt(True))
-        self.assertEqual(b'\x01\x02', encrypt(False))
-        self.assertEqual(b'\x01\x03d', encrypt(100))
-        self.assertEqual(b'\x01\x04d', encrypt(-100))
+        params = (
+            (b'\x01\x00', None),
+            (b'\x01\x01', True),
+            (b'\x01\x02', False),
+            (b'\x01\x04', ""),
+            (b'\x01\nd', 100),
+            (b'\x01\x0bd', -100),
+            (b'\x01\x0c@\x04z\xe1G\xae\x14{', 2.56),
+            (b'\x01\x03', 0.0),
+        )
+        for expected, arg in params:
+            with self.subTest(f"encrypt{arg}"):
+                self.assertEqual(expected, encrypt(arg))
+
+    def test_encode_float(self):
+        self.assertEqual(b'@\t\x1e\xb8Q\xeb\x85\x1f', encode_float(3.14))
+        self.assertEqual(b'\x00\x00\x00\x00\x00\x00\x00\x00', encode_float(0.0))
 
 
 if __name__ == '__main__':

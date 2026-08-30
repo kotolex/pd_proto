@@ -1,10 +1,9 @@
 ## PyData
 
-Бинарный протокол представления основных типов данных в python
+Binary protocol for representing basic data types in Python
 
 ### ToDo
 
-1. float + перевести на английский
 2. string
 3. list
 4. tuple
@@ -14,3 +13,4 @@
 8. оптимизации
 9. написать на раст/окамл
 10. хранение и язык поиска
+11. float_0, optimize float based on size -float_1, float_2 etc...
