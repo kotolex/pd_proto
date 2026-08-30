@@ -22,7 +22,8 @@ def _encrypt_base(data: SupportedTypes) -> bytearray:
         case int() as y:
             if y < 0:
                 y = (-1) * y
-            result.extend(encode_varint(y))
+            if y != 0:
+                result.extend(encode_varint(y))
         case float() as z:
             if z != 0.0:
                 result.extend(encode_float(z))
@@ -38,10 +39,6 @@ def encode_varint(number: int) -> bytearray:
     :param number: a non-negative integer (or 0)
     :return: presentation bytes of the number
     """
-    if number < 0:
-        raise ValueError("Positive numbers only!")
-    if number == 0:
-        return bytearray([0])
     result = bytearray()
     while number > 0:
         byte = number & 0x7F

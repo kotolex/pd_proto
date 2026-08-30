@@ -14,6 +14,7 @@ class TestDecrypt(TestCase):
         self.assertEqual(True, decrypt(encrypt(True)))
         self.assertEqual(False, decrypt(encrypt(False)))
         self.assertEqual("", decrypt(encrypt("")))
+        self.assertEqual(0, decrypt(encrypt(0)))
         self.assertEqual([], decrypt(encrypt([])))
         self.assertEqual({}, decrypt(encrypt({})))
         self.assertEqual(tuple(), decrypt(encrypt(tuple())))

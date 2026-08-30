@@ -8,7 +8,6 @@ from src.pydata.encrypt import encode_float, encode_varint, encrypt
 class TestEncodeEncrypt(TestCase):
 
     def test_encode_varint(self):
-        self.assertEqual(b'\x00', bytes(encode_varint(0)))
         self.assertEqual(b'\x7f', bytes(encode_varint(127)))
         self.assertEqual(b'\xe8\x07', bytes(encode_varint(1000)))
 
@@ -31,6 +30,7 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x01', True),
             (b'\x01\x02', False),
             (b'\x01\x04', ""),
+            (b'\x01\t', 0),
             (b'\x01\nd', 100),
             (b'\x01\x0bd', -100),
             (b'\x01\x0c@\x04z\xe1G\xae\x14{', 2.56),
@@ -42,7 +42,7 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x08', {}),
         )
         for expected, arg in params:
-            with self.subTest(f"encrypt{arg}"):
+            with self.subTest(f"encrypt({arg})"):
                 self.assertEqual(expected, encrypt(arg))
 
     def test_encode_float(self):

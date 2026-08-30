@@ -22,6 +22,7 @@ class SupportedType(IntEnum):
     TUPLE_EMPTY = 6
     SET_EMPTY = 7
     DICT_EMPTY = 8
+    INT_ZERO = 9
     INT_POSITIVE = 10
     INT_NEGATIVE = 11
     FLOAT = 12
@@ -53,7 +54,9 @@ def int_by_type(value: SupportedTypes):
     if value is False:
         return SupportedType.BOOL_FALSE.value
     if isinstance(value, int):
-        if value >= 0:
+        if value == 0:
+            return SupportedType.INT_ZERO.value
+        if value > 0:
             return SupportedType.INT_POSITIVE.value
         return SupportedType.INT_NEGATIVE.value
     if isinstance(value, float):
@@ -96,6 +99,8 @@ def type_by_int(code: int) -> SupportedTypes:
         return True
     if code == SupportedType.BOOL_FALSE.value:
         return False
+    if code == SupportedType.INT_ZERO.value:
+        return 0
     if code == SupportedType.INT_POSITIVE.value:
         return 1
     if code == SupportedType.INT_NEGATIVE.value:
