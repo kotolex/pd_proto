@@ -4,6 +4,7 @@ from src.pydata.errors import UnsupportedTypeError, WrongCodeError
 
 PROTOCOL_VERSION = 1
 FLOAT_FORMAT = ">d"
+UTF_8 = "utf-8"
 
 SupportedTypes = None | bool | int | float | str
 

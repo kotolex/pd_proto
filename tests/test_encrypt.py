@@ -35,6 +35,7 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x0bd', -100),
             (b'\x01\x0c@\x04z\xe1G\xae\x14{', 2.56),
             (b'\x01\x03', 0.0),
+            (b'\x01\r\x04test', "test"),
         )
         for expected, arg in params:
             with self.subTest(f"encrypt{arg}"):

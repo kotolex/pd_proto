@@ -4,7 +4,6 @@ Binary protocol for representing basic data types in Python
 
 ### ToDo
 
-2. string
 3. list
 4. tuple
 5. set
@@ -14,3 +13,4 @@ Binary protocol for representing basic data types in Python
 9. написать на раст/окамл
 10. хранение и язык поиска
 11. float_0, optimize float based on size -float_1, float_2 etc...
+12. optimize string with code string_compessed

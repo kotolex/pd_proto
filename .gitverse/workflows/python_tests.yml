@@ -26,7 +26,7 @@ jobs:
         pip install pylint
     - name: Lint
       run: |
-        python -m pylint --rcfile pylint.toml src/pydata
+        python -m pylint --rcfile pylint.toml .
     - name: Unit-tests
       run: |
         python -m unittest discover -s tests

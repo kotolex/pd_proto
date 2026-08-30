@@ -1,7 +1,7 @@
 import struct
 
-from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, SupportedType,
-                              SupportedTypes, type_by_int)
+from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
+                              SupportedType, SupportedTypes, type_by_int)
 from src.pydata.errors import EmptyDataError, ProtocolError
 
 
@@ -62,6 +62,12 @@ def decrypt(bts: bytes) -> SupportedTypes:
                 val = decode_float(bts[index + 1:index + 9])
                 result.append(val)
                 index += 9
+            elif b == SupportedType.STRING.value:
+                val, read = decode_varint(bts[index + 1:])
+                index += read
+                text = bts[index + 1:index + val + 1]
+                result.append(text.decode(UTF_8))
+                index += val + 1
         else:
             result.append(next_token)
         if not continuation:

@@ -1,7 +1,7 @@
 import struct
 
-from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, SupportedTypes,
-                              int_by_type)
+from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
+                              SupportedTypes, int_by_type)
 
 
 def encode_float(number: float) -> bytes:
@@ -27,8 +27,8 @@ def _encrypt_base(data: SupportedTypes) -> bytearray:
             if z != 0.0:
                 result.extend(encode_float(z))
         case str() as s:
-            if s:
-                pass
+            if len(s) > 0:
+                result.extend(encode_string(s))
     return result
 
 
@@ -50,6 +50,17 @@ def encode_varint(number: int) -> bytearray:
             byte |= 0x80
         result.append(byte)
     return result
+
+
+def encode_string(value: str) -> bytearray:
+    """
+    Converts a string into bytes using the VarInt format for length anf utf-8 encoding for bytes
+    :param value: a string
+    :return: bytes representation of string in utf-8
+    """
+    encoded_str = value.encode(UTF_8)
+    bytes_len = len(encoded_str)
+    return encode_varint(bytes_len) + encoded_str
 
 
 def encrypt(data: SupportedTypes) -> bytes:
