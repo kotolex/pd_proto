@@ -1,7 +1,7 @@
 from src.pydata.const import AllowedTypes, int_by_type, PROTOCOL_VERSION
 
 
-def encrypt_base(data: AllowedTypes, result: bytearray | None = None) -> bytearray:
+def _encrypt_base(data: AllowedTypes, result: bytearray | None = None) -> bytearray:
     if result is None:
         result = bytearray()
     match data:
@@ -42,9 +42,13 @@ def encode_varint(number: int) -> bytearray:
 
 
 def encrypt(data: AllowedTypes) -> bytes:
+    """
+    Конвертируем допустимый python тип в набор байтов
+    :param data: объект любого из допустимых типов
+    :return: байты представления
+    """
     final = bytearray()
     final.append(PROTOCOL_VERSION)
-    tail = encrypt_base(data)
+    tail = _encrypt_base(data)
     final.extend(tail)
     return bytes(final)
-

@@ -4,7 +4,7 @@
 
 ### ToDo
 
-1. float
+1. float + перевести на английский
 2. string
 3. list
 4. tuple

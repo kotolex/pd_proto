@@ -16,7 +16,7 @@ def decode_varint(buffer: bytes) -> tuple[int, int]:
         # Забираем 7 полезных бит (маска 0x7F убирает старший бит-флаг)
         number |= (byte & 0x7F) << shift
         # Если старший бит равен 0 (проверка через И с маской 0x80), чтение окончено
-        if not (byte & 0x80):
+        if not byte & 0x80:
             break
         # Сдвигаем позицию для следующей семерки битов
         shift += 7
@@ -24,6 +24,12 @@ def decode_varint(buffer: bytes) -> tuple[int, int]:
 
 
 def decrypt(bts: bytes) -> AllowedTypes:
+    """
+    Пытаемся декодировать байты в объект одного из допустимых типов
+    :param bts: байты представления
+    :return: объект одного из допустимых типов
+    :raise AttributeError в случае повреждения данных или несоответствия формату
+    """
     if not bytes or bts[0] != PROTOCOL_VERSION or len(bts) == 1:
         raise AttributeError("Empty data or unsupported protocol version")
     result = []
