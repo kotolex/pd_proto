@@ -4,7 +4,6 @@ Binary protocol for representing basic data types in Python
 
 ### ToDo
 
-5. set
 6. dict
 7. превращение флоат в инт для экономии места (15.42 = 1542 и спецтип для парсинга)
 8. оптимизации

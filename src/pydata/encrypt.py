@@ -26,8 +26,7 @@ def encode_none() -> bytes:
     Returns byte representation for None
     :return: bytes representation of the None
     """
-    tag = Variant.NULL.value
-    return bytearray([tag])
+    return bytearray([Variant.NULL.value])
 
 
 def encode_float(number: float) -> bytearray:
@@ -36,10 +35,9 @@ def encode_float(number: float) -> bytearray:
     :param number: a standard Python floating-point number
     :return: bytes representation of the number
     """
-    tag = Variant.FLOAT.value
     if number == 0.0:
         return bytearray([Variant.FLOAT_ZER0.value])
-    result = bytearray([tag])
+    result = bytearray([Variant.FLOAT.value])
     value = struct.pack(FLOAT_FORMAT, number)
     return result + value
 
@@ -62,8 +60,7 @@ def encode_string(value: str) -> bytearray:
     """
     if not value:
         return bytearray([Variant.STRING_EMPTY.value])
-    tag = Variant.STRING.value
-    result = bytearray([tag])
+    result = bytearray([Variant.STRING.value])
     encoded_str = value.encode(UTF_8)
     bytes_len = len(encoded_str)
     result.extend(encode_varint(bytes_len))
@@ -86,22 +83,25 @@ def encode_int(number: int) -> bytearray:
     return result + value
 
 
-def encode_list(a_list: list[SupportedTypes]) -> bytearray:
+def _encode_collection(collection, empty: Variant, full: Variant) -> bytearray:
+    if not collection:
+        return bytearray([empty.value])
+    result = bytearray([full.value])
+    length = encode_varint(len(collection))
+    result.extend(length)
+    for e in collection:
+        value = _encrypt_base(e)
+        result.extend(value)
+    return result
+
+
+def encode_list(a_list: list) -> bytearray:
     """
     Converts list of supported types into bytes
     :param a_list: a list containing objects of supported types
     :return: bytes representation of the list
     """
-    if not a_list:
-        return bytearray([Variant.LIST_EMPTY.value])
-    tag = Variant.LIST.value
-    result = bytearray([tag])
-    length = encode_varint(len(a_list))
-    result.extend(length)
-    for e in a_list:
-        value = _encrypt_base(e)
-        result.extend(value)
-    return result
+    return _encode_collection(a_list, Variant.LIST_EMPTY, Variant.LIST)
 
 
 def encode_tuple(a_tuple: tuple[SupportedTypes]) -> bytearray:
@@ -110,16 +110,7 @@ def encode_tuple(a_tuple: tuple[SupportedTypes]) -> bytearray:
     :param a_tuple: a tuple containing objects of supported types
     :return: bytes representation of the tuple
     """
-    if not a_tuple:
-        return bytearray([Variant.TUPLE_EMPTY.value])
-    tag = Variant.TUPLE.value
-    result = bytearray([tag])
-    length = encode_varint(len(a_tuple))
-    result.extend(length)
-    for e in a_tuple:
-        value = _encrypt_base(e)
-        result.extend(value)
-    return result
+    return _encode_collection(a_tuple, Variant.TUPLE_EMPTY, Variant.TUPLE)
 
 
 def encode_set(a_set: set) -> bytearray:
@@ -128,16 +119,7 @@ def encode_set(a_set: set) -> bytearray:
     :param a_set: a tuple containing objects of supported types
     :return: bytes representation of the tuple
     """
-    if not a_set:
-        return bytearray([Variant.SET_EMPTY.value])
-    tag = Variant.SET.value
-    result = bytearray([tag])
-    length = encode_varint(len(a_set))
-    result.extend(length)
-    for e in a_set:
-        value = _encrypt_base(e)
-        result.extend(value)
-    return result
+    return _encode_collection(a_set, Variant.SET_EMPTY, Variant.SET)
 
 
 def _encrypt_base(data: SupportedTypes) -> bytearray:

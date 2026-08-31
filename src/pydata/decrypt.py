@@ -32,7 +32,6 @@ def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
     number = 0
     shift = 0
     bytes_read = 0
-
     for byte in bts[offset:]:
         bytes_read += 1
         number |= (byte & 0x7F) << shift
