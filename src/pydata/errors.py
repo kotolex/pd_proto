@@ -31,3 +31,27 @@ class ProtocolError(PyDataError):
     """
     Raises when the protocol is wrong or data is corrupted
     """
+
+
+class WrongTagError(ProtocolError):
+    """
+    Raises when the tag is wrong, which often mean data corrupted
+    """
+
+
+class DecryptFloatError(ProtocolError):
+    """
+    Raises when the data is invalid and float value cannot be decrypted
+    """
+
+
+class DecryptStringError(ProtocolError):
+    """
+    Raises when the data is invalid and string value cannot be decrypted
+    """
+
+
+class BytesLeftError(ProtocolError):
+    """
+    Raises when the parsing is over, but still have bytes left
+    """

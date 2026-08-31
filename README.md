@@ -4,7 +4,7 @@ Binary protocol for representing basic data types in Python
 
 ### ToDo
 
-3. list
+
 4. tuple
 5. set
 6. dict

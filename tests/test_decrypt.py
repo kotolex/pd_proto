@@ -2,7 +2,9 @@ from unittest import TestCase, main
 
 from src.pydata.decrypt import decrypt
 from src.pydata.encrypt import encrypt
-from src.pydata.errors import EmptyDataError, ProtocolError
+from src.pydata.errors import (BytesLeftError, DecryptFloatError,
+                               DecryptStringError, EmptyDataError,
+                               ProtocolError)
 
 
 class TestDecrypt(TestCase):
@@ -47,8 +49,29 @@ class TestDecrypt(TestCase):
             decrypt(b'\x02\x03')
 
     def test_decrypt_fail_on_corrupt_data(self):
-        with self.assertRaises(ProtocolError):
+        with self.assertRaises(BytesLeftError):
             decrypt(b'\x01\x010101')
+
+    def test_decrypt_list_full(self):
+        params = (
+            ([1, -1, 0, 1], b'\x01\x0e\x04\n\x01\x0b\x01\t\n\x01'),
+            ([1, 2, [1, 2], 1, 2], b'\x01\x0e\x05\n\x01\n\x02\x0e\x02\n\x01\n\x02\n\x01\n\x02'),
+            (['1', [], '2', ['1'], '3'], b'\x01\x0e\x05\r\x011\x05\r\x012\x0e\x01\r\x011\r\x013'),
+            ([1.23, 0.0, 3.14], b'\x01\x0e\x03\x0c?\xf3\xae\x14z\xe1G\xae\x03\x0c@\t\x1e\xb8Q\xeb\x85\x1f'),
+            ([None, False, True, [], 0, 0.0, ''], b'\x01\x0e\x07\x00\x02\x01\x05\t\x03\x04'),
+            ([100, 10.1, [100, 10.1, [100, 10.1]]], b'\x01\x0e\x03\nd\x0c@$333333\x0e\x03\nd\x0c@$333333\x0e\x02\nd\x0c@$333333'),
+        )
+        for expected, arg in params:
+            with self.subTest(f"decrypt_list({arg})"):
+                self.assertEqual(expected, decrypt(arg))
+
+    def test_decrypt_fail_on_corrupt_float(self):
+        with self.assertRaises(DecryptFloatError):
+            decrypt(b'\x01\x0c@$33333')
+
+    def test_decrypt_fail_on_corrupt_string(self):
+        with self.assertRaises(DecryptStringError):
+            decrypt(b'\x01\r\x031')
 
 
 if __name__ == '__main__':
