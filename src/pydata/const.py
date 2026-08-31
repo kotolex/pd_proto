@@ -7,9 +7,10 @@ FLOAT_FORMAT = ">d"
 UTF_8 = "utf-8"
 
 SupportedTypes = None | bool | int | float | str | list | tuple | dict | set
+SupportedCollections = list | tuple | dict | set
 
 
-class SupportedType(IntEnum):
+class Variant(IntEnum):
     """
     Supported types and their codes in the resulting encoding
     """
@@ -48,75 +49,75 @@ def int_by_type(value: SupportedTypes):
     :raise UnsupportedTypeError: if the type is not allowed
     """
     if value is None:
-        return SupportedType.NULL.value
+        return Variant.NULL.value
     if value is True:
-        return SupportedType.BOOL_TRUE.value
+        return Variant.BOOL_TRUE.value
     if value is False:
-        return SupportedType.BOOL_FALSE.value
+        return Variant.BOOL_FALSE.value
     if isinstance(value, int):
         if value == 0:
-            return SupportedType.INT_ZERO.value
+            return Variant.INT_ZERO.value
         if value > 0:
-            return SupportedType.INT_POSITIVE.value
-        return SupportedType.INT_NEGATIVE.value
+            return Variant.INT_POSITIVE.value
+        return Variant.INT_NEGATIVE.value
     if isinstance(value, float):
         if value == 0.0:
-            return SupportedType.FLOAT_ZER0.value
-        return SupportedType.FLOAT.value
+            return Variant.FLOAT_ZER0.value
+        return Variant.FLOAT.value
     if isinstance(value, str):
         if not value:
-            return SupportedType.STRING_EMPTY.value
-        return SupportedType.STRING.value
+            return Variant.STRING_EMPTY.value
+        return Variant.STRING.value
     if isinstance(value, list):
         if not value:
-            return SupportedType.LIST_EMPTY.value
-        return SupportedType.LIST.value
+            return Variant.LIST_EMPTY.value
+        return Variant.LIST.value
     if isinstance(value, tuple):
         if not value:
-            return SupportedType.TUPLE_EMPTY.value
-        return SupportedType.TUPLE.value
+            return Variant.TUPLE_EMPTY.value
+        return Variant.TUPLE.value
     if isinstance(value, set):
         if not value:
-            return SupportedType.SET_EMPTY.value
-        return SupportedType.SET.value
+            return Variant.SET_EMPTY.value
+        return Variant.SET.value
     if isinstance(value, dict):
         if not value:
-            return SupportedType.DICT_EMPTY.value
-        return SupportedType.DICT.value
+            return Variant.DICT_EMPTY.value
+        return Variant.DICT.value
     raise UnsupportedTypeError(f"Value of unsupported type -{value}-: {type(value)}")
 
 
-def type_by_int(code: int) -> SupportedTypes:
+def obj_by_code(code: int) -> SupportedTypes:
     """
     Returns an object by its code; note that it returns the object itself of that type, not the type
     :param code: the object code
     :return: an object of this type
     :raise WrongCodeError: if the code is invalid
     """
-    if code == SupportedType.NULL.value:
+    if code == Variant.NULL.value:
         return None
-    if code == SupportedType.BOOL_TRUE.value:
+    if code == Variant.BOOL_TRUE.value:
         return True
-    if code == SupportedType.BOOL_FALSE.value:
+    if code == Variant.BOOL_FALSE.value:
         return False
-    if code == SupportedType.INT_ZERO.value:
+    if code == Variant.INT_ZERO.value:
         return 0
-    if code == SupportedType.INT_POSITIVE.value:
+    if code == Variant.INT_POSITIVE.value:
         return 1
-    if code == SupportedType.INT_NEGATIVE.value:
+    if code == Variant.INT_NEGATIVE.value:
         return -1
-    if code == SupportedType.FLOAT.value:
+    if code == Variant.FLOAT.value:
         return 1.0
-    if code == SupportedType.FLOAT_ZER0.value:
+    if code == Variant.FLOAT_ZER0.value:
         return 0.0
-    if code in (SupportedType.STRING_EMPTY.value, SupportedType.STRING.value):
+    if code in (Variant.STRING_EMPTY.value, Variant.STRING.value):
         return ""
-    if code in (SupportedType.LIST_EMPTY.value, SupportedType.LIST.value):
+    if code in (Variant.LIST_EMPTY.value, Variant.LIST.value):
         return []
-    if code in (SupportedType.TUPLE_EMPTY.value, SupportedType.TUPLE.value):
+    if code in (Variant.TUPLE_EMPTY.value, Variant.TUPLE.value):
         return tuple()
-    if code in (SupportedType.SET_EMPTY.value, SupportedType.SET.value):
+    if code in (Variant.SET_EMPTY.value, Variant.SET.value):
         return set()
-    if code in (SupportedType.DICT_EMPTY.value, SupportedType.DICT.value):
+    if code in (Variant.DICT_EMPTY.value, Variant.DICT.value):
         return {}
-    raise WrongCodeError(f"Wrong code, you can use one of {SupportedType.all_codes()}")
+    raise WrongCodeError(f"Wrong code, you can use one of {Variant.all_codes()}")

@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 
-from src.pydata.const import int_by_type, type_by_int
+from src.pydata.const import int_by_type, obj_by_code
 from src.pydata.errors import UnsupportedTypeError, WrongCodeError
 
 
@@ -8,7 +8,7 @@ class TestConst(TestCase):
 
     def test_type_by_int_raise(self):
         with self.assertRaises(WrongCodeError):
-            type_by_int(-1)
+            obj_by_code(-1)
 
     def test_int_by_type_raise(self):
         with self.assertRaises(UnsupportedTypeError):

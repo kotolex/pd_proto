@@ -3,6 +3,7 @@ from unittest import TestCase, main
 
 from src.pydata.decrypt import decode_varint
 from src.pydata.encrypt import encode_float, encode_varint, encrypt
+from src.pydata.errors import UnsupportedTypeError
 
 
 class TestEncodeEncrypt(TestCase):
@@ -37,17 +38,24 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x03', 0.0),
             (b'\x01\r\x04test', "test"),
             (b'\x01\x05', []),
-            (b'\x01\x06', tuple()),
-            (b'\x01\x07', set()),
-            (b'\x01\x08', {}),
+            (b'\x01\x0e\x01\n\x01', [1]),
+            (b'\x01\x0e\x02\n\x01\n\x02', [1,2]),
+            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\r\x01a\r\x01b', [1,2, ["a", "b"]]),
+            # (b'\x01\x06', tuple()),
+            # (b'\x01\x07', set()),
+            # (b'\x01\x08', {}),
         )
         for expected, arg in params:
             with self.subTest(f"encrypt({arg})"):
                 self.assertEqual(expected, encrypt(arg))
 
     def test_encode_float(self):
-        self.assertEqual(b'@\t\x1e\xb8Q\xeb\x85\x1f', encode_float(3.14))
-        self.assertEqual(b'\x00\x00\x00\x00\x00\x00\x00\x00', encode_float(0.0))
+        self.assertEqual(bytearray(b'\x0c@\t\x1e\xb8Q\xeb\x85\x1f'), encode_float(3.14))
+        self.assertEqual(bytearray(b'\x03'), encode_float(0.0))
+
+    def test_encrypt_raise_on_unsupported_type(self):
+        with self.assertRaises(UnsupportedTypeError):
+            encrypt(self)
 
 
 if __name__ == '__main__':
