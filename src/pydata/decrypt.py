@@ -76,6 +76,17 @@ def decode_list(bts: bytes, offset: int) -> tuple[list, int]:
     return result, offset
 
 
+def decode_tuple(bts: bytes, offset: int) -> tuple[tuple, int]:
+    """
+    Decodes a tuple representation into a tuple
+    :param bts: a sequence of bytes
+    :param offset: index to read from
+    :return: tuple and offset
+    """
+    result, offset = decode_list(bts, offset)
+    return tuple(result), offset
+
+
 def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
     tag = bts[offset]
     offset += 1
@@ -114,6 +125,9 @@ def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
             return value, offset
         case Variant.LIST.value:
             value, offset = decode_list(bts, offset)
+            return value, offset
+        case Variant.TUPLE.value:
+            value, offset = decode_tuple(bts, offset)
             return value, offset
         case _:
             raise WrongTagError(f"Unknown tag {tag} for current protocol version {PROTOCOL_VERSION}")

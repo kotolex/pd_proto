@@ -104,6 +104,24 @@ def encode_list(a_list: list[SupportedTypes]) -> bytearray:
     return result
 
 
+def encode_tuple(a_tuple: tuple[SupportedTypes]) -> bytearray:
+    """
+    Converts tuple of supported types into bytes
+    :param a_tuple: a tuple containing objects of supported types
+    :return: bytes representation of the tuple
+    """
+    if not a_tuple:
+        return bytearray([Variant.TUPLE_EMPTY.value])
+    tag = Variant.TUPLE.value
+    result = bytearray([tag])
+    length = encode_varint(len(a_tuple))
+    result.extend(length)
+    for e in a_tuple:
+        value = _encrypt_base(e)
+        result.extend(value)
+    return result
+
+
 def _encrypt_base(data: SupportedTypes) -> bytearray:
     """
     Main and recursive function to encrypt different objects f supported types
@@ -125,6 +143,8 @@ def _encrypt_base(data: SupportedTypes) -> bytearray:
             result.extend(encode_string(s))
         case list() as a_list:
             result.extend(encode_list(a_list))
+        case tuple() as t:
+            result.extend(encode_tuple(t))
         case _:
             raise UnsupportedTypeError(f"Value of unsupported type -{data}-: {type(data)}")
     return result
