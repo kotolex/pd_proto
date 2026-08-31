@@ -24,6 +24,12 @@ class TestDecrypt(TestCase):
         self.assertEqual("stop", decrypt(b'\x01\r\x04stop'))
         self.assertEqual("", decrypt(b'\x01\x04'))
 
+    def test_decrypt_list(self):
+        self.assertEqual([1], decrypt(b'\x01\x0e\x01\n\x01'))
+        self.assertEqual([True], decrypt(b'\x01\x0e\x01\x01'))
+        self.assertEqual([1, 2], decrypt(b'\x01\x0e\x02\n\x01\n\x02'))
+        self.assertEqual([1, 2, [1, 2]], decrypt(b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\n\x01\n\x02'))
+
     def test_decrypt_float(self):
         self.assertEqual(3.14, decrypt(b'\x01\x0c@\t\x1e\xb8Q\xeb\x85\x1f'))
         self.assertEqual(0.0, decrypt(b'\x01\x03'))

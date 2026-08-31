@@ -13,17 +13,17 @@ class TestEncodeEncrypt(TestCase):
         self.assertEqual(b'\xe8\x07', bytes(encode_varint(1000)))
 
     def test_decode_varint(self):
-        self.assertEqual((0, 1), decode_varint(b'\x00'))
-        self.assertEqual((127, 1), decode_varint(b'\x7f'))
-        self.assertEqual((1000, 2), decode_varint(b'\xe8\x07'))
+        self.assertEqual((0, 1), decode_varint(b'\x00', 0))
+        self.assertEqual((127, 1), decode_varint(b'\x7f', 0))
+        self.assertEqual((1000, 2), decode_varint(b'\xe8\x07', 0))
 
     def test_work_varint_many(self):
         for i in (0, 42, 555, 100, 1000, 1000000):
-            self.assertEqual(i, decode_varint(bytes(encode_varint(i)))[0])
+            self.assertEqual(i, decode_varint(bytes(encode_varint(i)), 0)[0])
 
     def test_work_varint_random(self):
         for i in (random.randint(0, 1000000) for _ in range(1000)):
-            self.assertEqual(i, decode_varint(bytes(encode_varint(i)))[0])
+            self.assertEqual(i, decode_varint(bytes(encode_varint(i)), 0)[0])
 
     def test_encrypt(self):
         params = (
@@ -39,8 +39,10 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\r\x04test', "test"),
             (b'\x01\x05', []),
             (b'\x01\x0e\x01\n\x01', [1]),
+            (b'\x01\x0e\x01\x01', [True]),
             (b'\x01\x0e\x02\n\x01\n\x02', [1,2]),
             (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\r\x01a\r\x01b', [1,2, ["a", "b"]]),
+            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\n\x01\n\x02', [1,2, [1, 2]]),
             # (b'\x01\x06', tuple()),
             # (b'\x01\x07', set()),
             # (b'\x01\x08', {}),
