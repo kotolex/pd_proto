@@ -87,6 +87,22 @@ def decode_tuple(bts: bytes, offset: int) -> tuple[tuple, int]:
     return tuple(result), offset
 
 
+def decode_set(bts: bytes, offset: int) -> tuple[set, int]:
+    """
+    Decodes a set representation into a set
+    :param bts: a sequence of bytes
+    :param offset: index to read from
+    :return: set and offset
+    """
+    elements_count, read = decode_varint(bts, offset)
+    result = set()
+    offset += read
+    for _ in range(elements_count):
+        el, offset = _decrypt_base(bts, offset)
+        result.add(el)
+    return result, offset
+
+
 def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
     tag = bts[offset]
     offset += 1
@@ -128,6 +144,9 @@ def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
             return value, offset
         case Variant.TUPLE.value:
             value, offset = decode_tuple(bts, offset)
+            return value, offset
+        case Variant.SET.value:
+            value, offset = decode_set(bts, offset)
             return value, offset
         case _:
             raise WrongTagError(f"Unknown tag {tag} for current protocol version {PROTOCOL_VERSION}")

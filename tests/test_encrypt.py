@@ -45,7 +45,8 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\n\x01\n\x02', [1,2, [1, 2]]),
             (b'\x01\x06', tuple()),
             (b'\x01\x0f\x03\t\x03\x00', (0, 0.0, None)),
-            # (b'\x01\x07', set()),
+            (b'\x01\x07', set()),
+            (b'\x01\x10\x02\t\x00', {0, None}),
             # (b'\x01\x08', {}),
         )
         for expected, arg in params:

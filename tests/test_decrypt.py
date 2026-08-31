@@ -59,8 +59,8 @@ class TestDecrypt(TestCase):
             (['1', [], '2', ['1'], '3'], b'\x01\x0e\x05\r\x011\x05\r\x012\x0e\x01\r\x011\r\x013'),
             ([1.23, 0.0, 3.14], b'\x01\x0e\x03\x0c?\xf3\xae\x14z\xe1G\xae\x03\x0c@\t\x1e\xb8Q\xeb\x85\x1f'),
             ([None, False, True, [], 0, 0.0, ''], b'\x01\x0e\x07\x00\x02\x01\x05\t\x03\x04'),
-            ([100, 10.1, [100, 10.1, [100, 10.1]]],
-             b'\x01\x0e\x03\nd\x0c@$333333\x0e\x03\nd\x0c@$333333\x0e\x02\nd\x0c@$333333'),
+            ([(1, 2), 3, {'4', '5'}, 6.789], b"\x01\x0e\x04\x0f\x02\n\x01\n\x02\n\x03\x10\x02\r\x014\r\x015\x0c@\x1b'\xef\x9d\xb2-\x0e"),
+            ([100, 10.1, [100, 10.1, [100, 10.1]]], b'\x01\x0e\x03\nd\x0c@$333333\x0e\x03\nd\x0c@$333333\x0e\x02\nd\x0c@$333333'),
         )
         for expected, arg in params:
             with self.subTest(f"decrypt_list({arg})"):
@@ -79,6 +79,17 @@ class TestDecrypt(TestCase):
             ((1, 2, None), b'\x01\x0f\x03\n\x01\n\x02\x00'),
             ((0, 0.0, None, ''), b'\x01\x0f\x04\t\x03\x00\x04'),
             ((1, (1.0, ()), '1'), b'\x01\x0f\x03\n\x01\x0f\x02\x0c?\xf0\x00\x00\x00\x00\x00\x00\x06\r\x011'),
+        )
+        for expected, arg in params:
+            with self.subTest(f"decrypt_list({arg})"):
+                self.assertEqual(expected, decrypt(arg))
+
+
+    def test_decrypt_set(self):
+        params = (
+            ({0, 1, None}, b'\x01\x10\x03\t\n\x01\x00'),
+            ({0.12, '', 100}, b'\x01\x10\x03\x0c?\xbe\xb8Q\xeb\x85\x1e\xb8\x04\nd'),
+            ({(1, 2), 3}, b'\x01\x10\x02\n\x03\x0f\x02\n\x01\n\x02'),
         )
         for expected, arg in params:
             with self.subTest(f"decrypt_list({arg})"):
