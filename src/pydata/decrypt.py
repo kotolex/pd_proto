@@ -15,11 +15,29 @@ def decode_float(bts: bytes, offset: int) -> tuple[float, int]:
     :return: tuple of floating point number and offset
     :raise: DecryptFloatError if failed to decode
     """
-    const = 8  # 8 bytes for float for now, TODO optimize
+    const = 8  # 8 bytes is default for float
     if len(bts) < const + offset:
         raise DecryptFloatError(f"Need {const} bytes, but have only {len(bts) - offset} bytes left at index {offset}")
     result = struct.unpack(FLOAT_FORMAT, bts[offset:const + offset])[0]
     return result, const
+
+
+def decode_optimized_float(bts: bytes, offset: int, tag: int) -> tuple[float, int]:
+    """
+    Decode optimized floating point number from bytes.
+    :param bts: a sequence of bytes
+    :param offset: index to read from
+    :param tag: tag of float
+    :return: tuple of floating point number and offset
+    :raise: DecryptFloatError if failed to decode
+    """
+    value, read = decode_varint(bts, offset)
+    if tag == Variant.FLOAT_NO_DECIMALS.value:
+        result = value + 0.0
+    else:
+        dec_places = tag - 20  # cause FLOAT_1 = 21, FLOAT_2=22 etc.
+        result = value / (10 ** dec_places)
+    return result, read
 
 
 def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
@@ -102,6 +120,24 @@ def decode_set(bts: bytes, offset: int) -> tuple[set, int]:
     return result, offset
 
 
+def decode_dict(bts: bytes, offset: int) -> tuple[dict, int]:
+    """
+    Decodes a dict representation into a dictionary
+    :param bts: a sequence of bytes
+    :param offset: index to read from
+    :return: tuple of dict and offset
+    """
+    elements_count, read = decode_varint(bts, offset)
+    result = {}
+    offset += read
+    for _ in range(elements_count):
+        key, offset = _decrypt_base(bts, offset)
+        result[key] = None
+        value, offset = _decrypt_base(bts, offset)
+        result[key] = value
+    return result, offset
+
+
 def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
     tag = bts[offset]
     offset += 1
@@ -129,6 +165,11 @@ def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
         case Variant.FLOAT.value:
             value, off = decode_float(bts, offset)
             return value, offset + off
+        case (Variant.FLOAT_NO_DECIMALS.value |
+              Variant.FLOAT_1.value | Variant.FLOAT_2.value | Variant.FLOAT_3.value |
+              Variant.FLOAT_4.value | Variant.FLOAT_5.value | Variant.FLOAT_6.value):
+            value, off = decode_optimized_float(bts, offset, tag)
+            return value, offset + off
         case Variant.INT_POSITIVE.value:
             value, off = decode_varint(bts, offset)
             return value, offset + off
@@ -146,6 +187,9 @@ def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
             return value, offset
         case Variant.SET.value:
             value, offset = decode_set(bts, offset)
+            return value, offset
+        case Variant.DICT.value:
+            value, offset = decode_dict(bts, offset)
             return value, offset
         case _:
             raise WrongTagError(f"Unknown tag {tag} for current protocol version {PROTOCOL_VERSION}")

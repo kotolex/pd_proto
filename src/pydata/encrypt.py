@@ -1,8 +1,10 @@
 import struct
 
-from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
-                              SupportedTypes, Variant)
+from src.pydata.const import (FLOAT_FORMAT, FLOAT_LIMIT, PROTOCOL_VERSION,
+                              UTF_8, SupportedTypes, Variant,
+                              tag_by_decimal_places)
 from src.pydata.errors import UnsupportedTypeError
+from src.pydata.utils import exponent
 
 
 def encode_varint(number: int) -> bytearray:
@@ -37,6 +39,19 @@ def encode_float(number: float) -> bytearray:
     """
     if number == 0.0:
         return bytearray([Variant.FLOAT_ZER0.value])
+    if number <= FLOAT_LIMIT:
+        dec_places = exponent(number)
+        if dec_places < 7:
+            tag = tag_by_decimal_places(dec_places)
+            result = bytearray([tag])
+            if dec_places == 0:
+                result.extend(encode_varint(int(number)))
+                return result
+            limit = FLOAT_LIMIT / (10 ** dec_places)
+            if number < limit:
+                int_value = int(number * (10 ** dec_places))
+                result.extend(encode_varint(int_value))
+                return result
     result = bytearray([Variant.FLOAT.value])
     value = struct.pack(FLOAT_FORMAT, number)
     return result + value
@@ -122,6 +137,25 @@ def encode_set(a_set: set) -> bytearray:
     return _encode_collection(a_set, Variant.SET_EMPTY, Variant.SET)
 
 
+def encode_dict(a_dict: dict) -> bytearray:
+    """
+    Converts dict of supported types into bytes
+    :param a_dict: a dict containing objects of supported types
+    :return: bytes representation of the dict
+    """
+    if not a_dict:
+        return bytearray([Variant.DICT_EMPTY.value])
+    result = bytearray([Variant.DICT.value])
+    length = encode_varint(len(a_dict))
+    result.extend(length)
+    for key, value in a_dict.items():
+        key_encoded = _encrypt_base(key)
+        result.extend(key_encoded)
+        value_encoded = _encrypt_base(value)
+        result.extend(value_encoded)
+    return result
+
+
 def _encrypt_base(data: SupportedTypes) -> bytearray:
     """
     Main and recursive function to encrypt different objects f supported types
@@ -147,6 +181,8 @@ def _encrypt_base(data: SupportedTypes) -> bytearray:
             result.extend(encode_tuple(t))
         case set() as a_set:
             result.extend(encode_set(a_set))
+        case dict() as a_dict:
+            result.extend(encode_dict(a_dict))
         case _:
             raise UnsupportedTypeError(f"Value of unsupported type -{data}-: {type(data)}")
     return result

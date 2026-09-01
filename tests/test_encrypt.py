@@ -34,7 +34,7 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\t', 0),
             (b'\x01\nd', 100),
             (b'\x01\x0bd', -100),
-            (b'\x01\x0c@\x04z\xe1G\xae\x14{', 2.56),
+            (b'\x01\x16\x80\x02', 2.56),
             (b'\x01\x03', 0.0),
             (b'\x01\r\x04test', "test"),
             (b'\x01\x05', []),
@@ -47,14 +47,15 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x0f\x03\t\x03\x00', (0, 0.0, None)),
             (b'\x01\x07', set()),
             (b'\x01\x10\x02\t\x00', {0, None}),
-            # (b'\x01\x08', {}),
+            (b'\x01\x08', {}),
+            (b'\x01\x11\x02\n\x01\n\x02\n\x03\n\x04', {1:2, 3:4}),
         )
         for expected, arg in params:
             with self.subTest(f"encrypt({arg})"):
                 self.assertEqual(expected, encrypt(arg))
 
     def test_encode_float(self):
-        self.assertEqual(bytearray(b'\x0c@\t\x1e\xb8Q\xeb\x85\x1f'), encode_float(3.14))
+        self.assertEqual(bytearray(b'\x16\xba\x02'), encode_float(3.14))
         self.assertEqual(bytearray(b'\x03'), encode_float(0.0))
 
     def test_encrypt_raise_on_unsupported_type(self):
