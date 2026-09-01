@@ -38,7 +38,7 @@ class Variant(IntEnum):
     FLOAT_3 = 23
     FLOAT_4 = 24
     FLOAT_5 = 25
-    FLOAT_6 = 26 # <- 27, 28, 29
+    FLOAT_6 = 26  # <- 27, 28, 29
     STRING_COMPRESSED = 30
     STRING_1 = 31
     STRING_2 = 32

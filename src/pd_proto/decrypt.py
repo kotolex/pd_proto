@@ -104,9 +104,6 @@ def decode_list(bts: bytes, offset: int) -> tuple[list, int]:
     for i in range(elements_count):
         el, offset = _decrypt_base(bts, offset)
         result[i] = el
-    if len(result) != elements_count:
-        raise CollectionLengthError(f"Expect {elements_count} length for LIST/TUPLE, but got {len(result)}, "
-                                    f"offset: {offset}")
     return result, offset
 
 
