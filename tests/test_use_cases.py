@@ -2,8 +2,8 @@ import pickle
 from string import ascii_letters, digits
 from unittest import TestCase, main
 
-from src.pydata.decrypt import decrypt
-from src.pydata.encrypt import encrypt
+from src.pd_proto.decrypt import decrypt
+from src.pd_proto.encrypt import encrypt
 
 
 class TestUseCases(TestCase):

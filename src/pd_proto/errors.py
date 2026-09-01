@@ -1,6 +1,6 @@
 class PyDataError(Exception):
     """
-    Parent for all types of errors in pydata, so you can use broader error in except clauses
+    Parent for all types of errors in pd_proto, so you can use broader error in except clauses
 
     try:
         code() # some parsing
@@ -54,4 +54,9 @@ class DecryptStringError(ProtocolError):
 class BytesLeftError(ProtocolError):
     """
     Raises when the parsing is over, but still have bytes left
+    """
+
+class CollectionLengthError(ProtocolError):
+    """
+    Raises when the parsing is over, but elements count in collection is not equal to predefined
     """

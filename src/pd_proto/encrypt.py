@@ -1,11 +1,11 @@
 import struct
 import zlib
 
-from src.pydata.const import (FLOAT_FORMAT, FLOAT_LIMIT, PROTOCOL_VERSION,
-                              STRING_BYTES_LIMIT_FOR_COMPRESSION, UTF_8,
-                              SupportedTypes, Variant, tag_by_decimal_places)
-from src.pydata.errors import UnsupportedTypeError
-from src.pydata.utils import exponent
+from src.pd_proto.const import (FLOAT_FORMAT, FLOAT_LIMIT, PROTOCOL_VERSION,
+                                STRING_BYTES_LIMIT_FOR_COMPRESSION, UTF_8,
+                                SupportedTypes, Variant, tag_by_decimal_places)
+from src.pd_proto.errors import UnsupportedTypeError
+from src.pd_proto.utils import exponent
 
 
 def encode_varint(number: int) -> bytearray:

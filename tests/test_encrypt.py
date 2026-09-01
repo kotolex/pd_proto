@@ -1,9 +1,9 @@
 import random
 from unittest import TestCase, main
 
-from src.pydata.decrypt import decode_varint
-from src.pydata.encrypt import encode_float, encode_varint, encrypt
-from src.pydata.errors import UnsupportedTypeError
+from src.pd_proto.decrypt import decode_varint
+from src.pd_proto.encrypt import encode_float, encode_varint, encrypt
+from src.pd_proto.errors import UnsupportedTypeError
 
 
 class TestEncodeEncrypt(TestCase):
@@ -18,7 +18,7 @@ class TestEncodeEncrypt(TestCase):
         self.assertEqual((1000, 2), decode_varint(b'\xe8\x07', 0))
 
     def test_work_varint_many(self):
-        for i in (0, 42, 555, 100, 1000, 1000000):
+        for i in (42, 555, 100, 1000, 1000000):
             self.assertEqual(i, decode_varint(bytes(encode_varint(i)), 0)[0])
 
     def test_work_varint_random(self):

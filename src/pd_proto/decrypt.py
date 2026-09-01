@@ -1,11 +1,11 @@
 import struct
 import zlib
 
-from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
-                              SupportedTypes, Variant)
-from src.pydata.errors import (BytesLeftError, DecryptFloatError,
-                               DecryptStringError, EmptyDataError,
-                               ProtocolError, WrongTagError)
+from src.pd_proto.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
+                                SupportedTypes, Variant)
+from src.pd_proto.errors import (BytesLeftError, CollectionLengthError,
+                                 DecryptFloatError, DecryptStringError,
+                                 EmptyDataError, ProtocolError, WrongTagError)
 
 
 def decode_float(bts: bytes, offset: int) -> tuple[float, int]:
@@ -51,12 +51,17 @@ def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
     number = 0
     shift = 0
     bytes_read = 0
+    safety_limit = 16
     for byte in bts[offset:]:
         bytes_read += 1
         number |= (byte & 0x7F) << shift
         if not byte & 0x80:
             break
         shift += 7
+        if bytes_read >= safety_limit:
+            raise ProtocolError(f"Int is too long or data corrupted, offset: {offset + bytes_read}")
+    if bytes_read == number and number == 0:
+        raise ProtocolError(f"Nothing to read at offset: {offset}")
     return number, bytes_read
 
 
@@ -77,6 +82,8 @@ def decode_string(bts: bytes, offset: int, tag: int | None = None) -> tuple[str,
         offset += read
     else:
         last_index = (tag - 30) + offset  # cause STRING_1=31 etc.
+        if len(bts) < last_index:
+            raise DecryptStringError(f"Not enough bytes, need {tag - 30}, but have only {len(bts) - offset} bytes left")
     text = bts[offset:last_index]
     if tag == Variant.STRING_COMPRESSED.value:
         text = zlib.decompress(text)
@@ -97,6 +104,9 @@ def decode_list(bts: bytes, offset: int) -> tuple[list, int]:
     for i in range(elements_count):
         el, offset = _decrypt_base(bts, offset)
         result[i] = el
+    if len(result) != elements_count:
+        raise CollectionLengthError(f"Expect {elements_count} length for LIST/TUPLE, but got {len(result)}, "
+                                    f"offset: {offset}")
     return result, offset
 
 
@@ -124,6 +134,8 @@ def decode_set(bts: bytes, offset: int) -> tuple[set, int]:
     for _ in range(elements_count):
         el, offset = _decrypt_base(bts, offset)
         result.add(el)
+    if len(result) != elements_count:
+        raise CollectionLengthError(f"Expect {elements_count} length for SET, but got {len(result)}, offset: {offset}")
     return result, offset
 
 
@@ -142,11 +154,16 @@ def decode_dict(bts: bytes, offset: int) -> tuple[dict, int]:
         result[key] = None
         value, offset = _decrypt_base(bts, offset)
         result[key] = value
+    if len(result) != elements_count:
+        raise CollectionLengthError(f"Expect {elements_count} length for DICT, but got {len(result)}, offset: {offset}")
     return result, offset
 
 
 def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
-    tag = bts[offset]
+    try:
+        tag = bts[offset]
+    except IndexError as exc:
+        raise ProtocolError(f"Data corrupted at offset {offset}") from exc
     offset += 1
     match tag:
         case Variant.NULL.value:

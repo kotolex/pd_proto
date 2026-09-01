@@ -1,10 +1,10 @@
 from unittest import TestCase, main
 
-from src.pydata.decrypt import decrypt
-from src.pydata.encrypt import encrypt
-from src.pydata.errors import (BytesLeftError, DecryptFloatError,
-                               DecryptStringError, EmptyDataError,
-                               ProtocolError)
+from src.pd_proto.decrypt import decrypt
+from src.pd_proto.encrypt import encrypt
+from src.pd_proto.errors import (BytesLeftError, DecryptFloatError,
+                                 DecryptStringError, EmptyDataError,
+                                 ProtocolError)
 
 
 class TestDecrypt(TestCase):
@@ -94,6 +94,22 @@ class TestDecrypt(TestCase):
         for expected, arg in params:
             with self.subTest(f"decrypt_list({arg})"):
                 self.assertEqual(expected, decrypt(arg))
+
+    def test_decrypt_fail_list_end_stream(self):
+        with self.assertRaises(ProtocolError):
+            print(decrypt(b'\x01\x0e\x03\n\x01\n\x02'))
+
+    def test_decrypt_fail_tuple_end_stream(self):
+        with self.assertRaises(ProtocolError):
+            print(decrypt(b'\x01\x0f\x02\n\x01\n'))
+
+    def test_decrypt_fail_string_end_stream(self):
+        with self.assertRaises(DecryptStringError):
+            print(decrypt(decrypt(b'\x01"111')))
+
+    def test_decrypt_fail_varint(self):
+        with self.assertRaises(ProtocolError):
+            print(decrypt(b'\x01\n' + b'\x80'*20))
 
 
 if __name__ == '__main__':

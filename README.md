@@ -1,10 +1,9 @@
-## PyData
+## PDProto
 
-Binary protocol for representing basic data types in Python
+PeaceData Protocol or just PDProto is binary protocol for representing basic data types in Python
 
-We fight for each byte!
+## _We fight for each byte!_
 
 ### ToDo
-8. оптимизации
 9. написать на раст/окамл
 10. хранение и язык поиска
