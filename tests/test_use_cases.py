@@ -1,4 +1,5 @@
 import pickle
+from string import ascii_letters, digits
 from unittest import TestCase, main
 
 from src.pydata.decrypt import decrypt
@@ -11,12 +12,13 @@ class TestUseCases(TestCase):
             {},
             [],
             "ЯЙË text",
-            {1,2,None},
+            {1, 2, None},
             [1000, 3.14, 3],
-             [0, 0.0, True, False, None, [], tuple(), set(), {}],
-            [1000, 3.14, [("1","2"), {10,121}]],
-            [[12569, (1.234, 4.5678), {1:[{1,2}, {3,4}]}]],
-            [{1:1, 2:2}, {3:{4:4}}],
+            [0, 0.0, True, False, None, [], tuple(), set(), {}],
+            [1000, 3.14, [("1", "2"), {10, 121}]],
+            [[12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}]],
+            [{1: 1, 2: 2}, {3: {4: 4}}],
+            [(ascii_letters+digits)*3, 1234567890],
         )
         for param in params:
             with self.subTest(f"test decrypt=encrypt ({param})"):
@@ -26,7 +28,7 @@ class TestUseCases(TestCase):
         data = [[12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
         py_data = encrypt(data)
         pickle_data = pickle.dumps(data)
-        result =  100 - (len(py_data) / (len(pickle_data) / 100))
+        result = 100 - (len(py_data) / (len(pickle_data) / 100))
         self.assertGreater(result, 30)
 
     def test_floats(self):
@@ -41,6 +43,12 @@ class TestUseCases(TestCase):
         )
         for param in params:
             with self.subTest(f"test opt floats ({param})"):
+                res = encrypt(param)
+                self.assertEqual(decrypt(res), param)
+
+    def test_strings(self):
+        for param in ["a"* i for i in range(1,16)]:
+            with self.subTest(f"test opt strings ({param})"):
                 res = encrypt(param)
                 self.assertEqual(decrypt(res), param)
 

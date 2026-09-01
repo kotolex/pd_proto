@@ -1,8 +1,9 @@
 import struct
+import zlib
 
 from src.pydata.const import (FLOAT_FORMAT, FLOAT_LIMIT, PROTOCOL_VERSION,
-                              UTF_8, SupportedTypes, Variant,
-                              tag_by_decimal_places)
+                              STRING_BYTES_LIMIT_FOR_COMPRESSION, UTF_8,
+                              SupportedTypes, Variant, tag_by_decimal_places)
 from src.pydata.errors import UnsupportedTypeError
 from src.pydata.utils import exponent
 
@@ -75,9 +76,19 @@ def encode_string(value: str) -> bytearray:
     """
     if not value:
         return bytearray([Variant.STRING_EMPTY.value])
-    result = bytearray([Variant.STRING.value])
     encoded_str = value.encode(UTF_8)
     bytes_len = len(encoded_str)
+    if bytes_len <= 15:
+        tag = 30 + bytes_len  # cause STRING_1=31 etc.
+        result = bytearray([tag])
+        return result + encoded_str
+    if bytes_len > STRING_BYTES_LIMIT_FOR_COMPRESSION:
+        compressed = zlib.compress(encoded_str)
+        if len(compressed) < bytes_len + 3:
+            result = bytearray([Variant.STRING_COMPRESSED.value])
+            result.extend(encode_varint(len(compressed)))
+            return result + compressed
+    result = bytearray([Variant.STRING.value])
     result.extend(encode_varint(bytes_len))
     return result + encoded_str
 

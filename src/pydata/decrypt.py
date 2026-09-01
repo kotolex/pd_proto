@@ -1,4 +1,5 @@
 import struct
+import zlib
 
 from src.pydata.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
                               SupportedTypes, Variant)
@@ -59,20 +60,26 @@ def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
     return number, bytes_read
 
 
-def decode_string(bts: bytes, offset: int) -> tuple[str, int]:
+def decode_string(bts: bytes, offset: int, tag: int | None = None) -> tuple[str, int]:
     """
     Decodes a string representation into a string, always use UTF-8 encoding as python default one.
     :param bts: a sequence of bytes
     :param offset: index to read from
+    :param tag: tag if string is optimized
     :return: tuple of string and offset
     :raise: DecryptStringError if failed to decode
     """
-    size, read = decode_varint(bts, offset)
-    last_index = read + size + offset
-    if len(bts) < last_index - 1:
-        raise DecryptStringError(f"Not enough bytes, need {size}, but have only {len(bts) - offset} bytes left")
-    offset += read
+    if tag is None or tag == Variant.STRING_COMPRESSED.value:
+        size, read = decode_varint(bts, offset)
+        last_index = read + size + offset
+        if len(bts) < last_index - 1:
+            raise DecryptStringError(f"Not enough bytes, need {size}, but have only {len(bts) - offset} bytes left")
+        offset += read
+    else:
+        last_index = (tag - 30) + offset  # cause STRING_1=31 etc.
     text = bts[offset:last_index]
+    if tag == Variant.STRING_COMPRESSED.value:
+        text = zlib.decompress(text)
     value = text.decode(UTF_8)
     return value, last_index
 
@@ -85,11 +92,11 @@ def decode_list(bts: bytes, offset: int) -> tuple[list, int]:
     :return: tuple of list and offset
     """
     elements_count, read = decode_varint(bts, offset)
-    result = []
+    result = [None] * elements_count
     offset += read
-    for _ in range(elements_count):
+    for i in range(elements_count):
         el, offset = _decrypt_base(bts, offset)
-        result.append(el)
+        result[i] = el
     return result, offset
 
 
@@ -165,10 +172,8 @@ def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
         case Variant.FLOAT.value:
             value, off = decode_float(bts, offset)
             return value, offset + off
-        case (Variant.FLOAT_NO_DECIMALS.value |
-              Variant.FLOAT_1.value | Variant.FLOAT_2.value | Variant.FLOAT_3.value |
-              Variant.FLOAT_4.value | Variant.FLOAT_5.value | Variant.FLOAT_6.value):
-            value, off = decode_optimized_float(bts, offset, tag)
+        case t if Variant.FLOAT_NO_DECIMALS.value <= t <= Variant.FLOAT_6.value:
+            value, off = decode_optimized_float(bts, offset, t)
             return value, offset + off
         case Variant.INT_POSITIVE.value:
             value, off = decode_varint(bts, offset)
@@ -176,6 +181,9 @@ def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
         case Variant.INT_NEGATIVE.value:
             value, off = decode_varint(bts, offset)
             return (-1) * value, offset + off
+        case t if Variant.STRING_COMPRESSED.value <= t <= Variant.STRING_15.value:
+            value, offset = decode_string(bts, offset, t)
+            return value, offset
         case Variant.STRING.value:
             value, offset = decode_string(bts, offset)
             return value, offset

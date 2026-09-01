@@ -3,7 +3,7 @@ from timeit import timeit
 
 from pydata import decrypt, encrypt
 
-data = [[12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
+data = ["text", [12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
 py_data = encrypt(data)
 pickle_data = pickle.dumps(data)
 result =  100 - (len(py_data) / (len(pickle_data) / 100))
