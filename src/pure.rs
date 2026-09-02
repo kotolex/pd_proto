@@ -1,7 +1,11 @@
-pub fn dec_places(val: f64) -> usize {
-    let s = val.to_string();
-    if let Some(pos) = s.find('.') {
-        s[pos + 1..].trim_end_matches('0').len()
+pub fn dec_places(f: f64) -> usize {
+    let cv = f.to_string();
+    if let Some((_, pos)) = cv.split_once(".") {
+        let mut index = pos.len();
+        while pos[index..] == *"0" {
+            index -= 1
+        }
+        pos[0..index].len()
     } else {
         0
     }
