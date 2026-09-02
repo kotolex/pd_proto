@@ -3,7 +3,7 @@ from .const import (PROTOCOL_VERSION, UTF_8, SupportedCollections,
 from .decrypt import decrypt
 from .encrypt import encrypt
 from .errors import *
-from .pd_proto import sum_as_string
+from .pd_proto import exponent
 
 __all__ = (
     "encrypt", "decrypt", "ProtocolError", "UnsupportedTypeError", "PDProtoError", "WrongTagError",

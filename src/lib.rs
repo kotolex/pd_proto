@@ -4,10 +4,13 @@ use pyo3::prelude::*;
 #[pymodule]
 mod pd_proto {
     use pyo3::prelude::*;
-
-    /// Formats the sum of two numbers as string.
     #[pyfunction]
-    fn sum_as_string(a: usize, b: usize) -> PyResult<String> {
-        Ok((a + b).to_string())
+    fn exponent(val: f64) -> usize {
+        let s = val.to_string();
+        if let Some(pos) = s.find('.') {
+            s[pos + 1..].trim_end_matches('0').len()
+        } else {
+            0
+        }
     }
 }

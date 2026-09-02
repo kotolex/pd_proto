@@ -1,7 +1,7 @@
 import pickle
 from timeit import timeit
 
-from pd_proto import encrypt
+from pd_proto import encrypt, decrypt
 
 data = ["text", [12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
 py_data = encrypt(data)
@@ -16,7 +16,7 @@ print("DECRYPT")
 print(timeit("decrypt(py_data)", "from __main__ import decrypt, py_data, pickle, pickle_data"))
 print(timeit("pickle.loads(pickle_data)", "from __main__ import decrypt, py_data, pickle, pickle_data"))
 
-# Size difference: -22 byte, 30.99% better
+# Size difference: -35 byte, 44.87% better
 # ENCRYPT
 # 14.861491874995409
 # 0.8831491669989191
