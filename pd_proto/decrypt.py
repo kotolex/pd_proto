@@ -1,11 +1,11 @@
 import struct
 import zlib
 
-from src.pd_proto.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
-                                SupportedTypes, Variant)
-from src.pd_proto.errors import (BytesLeftError, CollectionLengthError,
-                                 DecryptFloatError, DecryptStringError,
-                                 EmptyDataError, ProtocolError, WrongTagError)
+from pd_proto.const import (FLOAT_FORMAT, PROTOCOL_VERSION, UTF_8,
+                            SupportedTypes, Variant)
+from pd_proto.errors import (BytesLeftError, CollectionLengthError,
+                             DecryptFloatError, DecryptStringError,
+                             EmptyDataError, ProtocolError, WrongTagError)
 
 
 def decode_float(bts: bytes, offset: int) -> tuple[float, int]:

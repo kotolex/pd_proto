@@ -1,10 +1,10 @@
 from unittest import TestCase, main
 
-from src.pd_proto.decrypt import decrypt
-from src.pd_proto.encrypt import encrypt
-from src.pd_proto.errors import (BytesLeftError, DecryptFloatError,
-                                 DecryptStringError, EmptyDataError,
-                                 ProtocolError)
+from pd_proto.decrypt import decrypt
+from pd_proto import encrypt
+from pd_proto.errors import (BytesLeftError, DecryptFloatError,
+                             DecryptStringError, EmptyDataError,
+                             ProtocolError)
 
 
 class TestDecrypt(TestCase):

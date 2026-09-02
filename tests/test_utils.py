@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 
-from src.pd_proto.utils import exponent
+from pd_proto.utils import exponent
 
 
 class TestUtils(TestCase):

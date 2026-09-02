@@ -1,11 +1,11 @@
 import struct
 import zlib
 
-from src.pd_proto.const import (FLOAT_FORMAT, FLOAT_LIMIT, PROTOCOL_VERSION,
-                                STRING_BYTES_LIMIT_FOR_COMPRESSION, UTF_8,
-                                SupportedTypes, Variant, tag_by_decimal_places)
-from src.pd_proto.errors import CycleLinksError, UnsupportedTypeError
-from src.pd_proto.utils import exponent
+from pd_proto.const import (FLOAT_FORMAT, FLOAT_LIMIT, PROTOCOL_VERSION,
+                            STRING_BYTES_LIMIT_FOR_COMPRESSION, UTF_8,
+                            SupportedTypes, Variant, tag_by_decimal_places)
+from pd_proto.errors import CycleLinksError, UnsupportedTypeError
+from pd_proto.utils import exponent
 
 
 def encode_varint(number: int) -> bytearray:

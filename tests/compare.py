@@ -1,7 +1,7 @@
 import pickle
 from timeit import timeit
 
-from pd_proto import decrypt, encrypt
+from pd_proto import encrypt
 
 data = ["text", [12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
 py_data = encrypt(data)
