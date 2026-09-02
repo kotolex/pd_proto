@@ -4,7 +4,7 @@ import zlib
 from src.pd_proto.const import (FLOAT_FORMAT, FLOAT_LIMIT, PROTOCOL_VERSION,
                                 STRING_BYTES_LIMIT_FOR_COMPRESSION, UTF_8,
                                 SupportedTypes, Variant, tag_by_decimal_places)
-from src.pd_proto.errors import UnsupportedTypeError
+from src.pd_proto.errors import CycleLinksError, UnsupportedTypeError
 from src.pd_proto.utils import exponent
 
 
@@ -208,6 +208,9 @@ def encrypt(data: SupportedTypes) -> bytes:
     """
     final = bytearray()
     final.append(PROTOCOL_VERSION)
-    tail = _encrypt_base(data)
+    try:
+        tail = _encrypt_base(data)
+    except RecursionError:
+        raise CycleLinksError("Cannot encrypt collections with link cycle") from None
     final.extend(tail)
     return bytes(final)

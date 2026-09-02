@@ -5,7 +5,7 @@ from .encrypt import encrypt
 from .errors import *
 
 __all__ = (
-    "encrypt", "decrypt", "ProtocolError", "UnsupportedTypeError", "PyDataError", "WrongCodeError", "WrongTagError",
+    "encrypt", "decrypt", "ProtocolError", "UnsupportedTypeError", "PDProtoError", "WrongTagError",
     "EmptyDataError", "BytesLeftError", "DecryptFloatError", "DecryptStringError", "PROTOCOL_VERSION", "SupportedTypes",
     "SupportedCollections", "UTF_8"
 )

@@ -3,7 +3,7 @@ from unittest import TestCase, main
 
 from src.pd_proto.decrypt import decode_varint
 from src.pd_proto.encrypt import encode_float, encode_varint, encrypt
-from src.pd_proto.errors import UnsupportedTypeError
+from src.pd_proto.errors import CycleLinksError, UnsupportedTypeError
 
 
 class TestEncodeEncrypt(TestCase):
@@ -61,6 +61,12 @@ class TestEncodeEncrypt(TestCase):
     def test_encrypt_raise_on_unsupported_type(self):
         with self.assertRaises(UnsupportedTypeError):
             encrypt(self)
+
+    def test_encrypt_raise_on_recursion(self):
+        a_l = [1, 2]
+        a_l.append(a_l)
+        with self.assertRaises(CycleLinksError):
+            encrypt(a_l)
 
 
 if __name__ == '__main__':

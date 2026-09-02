@@ -1,62 +1,66 @@
-class PyDataError(Exception):
+class PDProtoError(Exception):
     """
     Parent for all types of errors in pd_proto, so you can use broader error in except clauses
 
     try:
         code() # some parsing
-    except PyDataError:
+    except PDProtoError:
         report() # do something on error
     """
 
 
-class UnsupportedTypeError(PyDataError):
+class UnsupportedTypeError(PDProtoError):
     """
     Raises when the type of object is not supported
     """
 
 
-class WrongCodeError(PyDataError):
-    """
-    Raises when the code for supported type is wrong
-    """
-
-
-class EmptyDataError(PyDataError):
+class EmptyDataError(PDProtoError):
     """
     Raises when the data is empty
     """
 
 
-class ProtocolError(PyDataError):
+class ProtocolError(PDProtoError):
     """
-    Raises when the protocol is wrong or data is corrupted
+    Raises when the protocol is wrong
+    """
+
+class DataCorruptionError(PDProtoError):
+    """
+    Raises when something wrong with encrypted data: not enough bytes to parse, bytes left after parsing, etc.
     """
 
 
-class WrongTagError(ProtocolError):
+class WrongTagError(DataCorruptionError):
     """
     Raises when the tag is wrong, which often mean data corrupted
     """
 
 
-class DecryptFloatError(ProtocolError):
+class DecryptFloatError(DataCorruptionError):
     """
     Raises when the data is invalid and float value cannot be decrypted
     """
 
 
-class DecryptStringError(ProtocolError):
+class DecryptStringError(DataCorruptionError):
     """
     Raises when the data is invalid and string value cannot be decrypted
     """
 
 
-class BytesLeftError(ProtocolError):
+class BytesLeftError(DataCorruptionError):
     """
     Raises when the parsing is over, but still have bytes left
     """
 
-class CollectionLengthError(ProtocolError):
+class CollectionLengthError(DataCorruptionError):
     """
-    Raises when the parsing is over, but elements count in collection is not equal to predefined
+    Raises when the parsing is over, but elements count in a collection is not equal to predefine
+    """
+
+class CycleLinksError(DataCorruptionError):
+    """
+    Raises when there is a cycle in parsing and recursion limit exceeded
     """
