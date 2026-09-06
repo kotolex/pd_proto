@@ -16,6 +16,7 @@ print(timeit("pickle.dumps(data)", "from __main__ import encrypt, data, pickle",
 # print(timeit("decrypt(py_data)", "from __main__ import decrypt, py_data, pickle, pickle_data"))
 # print(timeit("pickle.loads(pickle_data)", "from __main__ import decrypt, py_data, pickle, pickle_data"))
 
+# At clean Python
 # Size difference: -35 byte, 44.87% better
 # ENCRYPT
 # 14.861491874995409
@@ -24,7 +25,14 @@ print(timeit("pickle.dumps(data)", "from __main__ import encrypt, data, pickle",
 # 33.93260312502389
 # 0.8927419999963604
 
+# on Rust
+# ENCRYPT (MacOS 25% faster)
+# 0.006887415947858244
+# 0.009223082975950092
 
-# ENCRYPT
-# 0.18364419999852544
-# 0.011767800002417061
+# ENCRYPT (Debian same speed~)
+# 0.012550916999771289
+# 0.008764723000240338
+# -----------
+# 0.01072115599981771
+# 0.01356410300013522

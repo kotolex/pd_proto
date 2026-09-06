@@ -15,9 +15,9 @@ version = "0.5.0"
 description = "Binary protocol special for python with efforts to speed and size"
 readme = "README.md"
 authors = [{ name = "kotolex", email = "farofwell@gmail.com" }]
-license = { file = "LICENSE" }
+license = "AGPL-3.0-only OR LicenseRef-Proprietary"
+license-files = ["LICENSE"]
 classifiers = [
-    "License :: OSI Approved :: MIT License",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Intended Audience :: Education",
