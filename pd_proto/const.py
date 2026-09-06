@@ -2,9 +2,7 @@ from enum import IntEnum
 
 PROTOCOL_VERSION = 1
 FLOAT_FORMAT = ">d"
-FLOAT_LIMIT = 268_435_455
 UTF_8 = "utf-8"
-STRING_BYTES_LIMIT_FOR_COMPRESSION = 100
 
 SupportedTypes = None | bool | int | float | str | list | tuple | dict | set
 SupportedCollections = list | tuple | dict | set
@@ -55,26 +53,3 @@ class Variant(IntEnum):
     STRING_13 = 43
     STRING_14 = 44
     STRING_15 = 45
-
-
-def tag_by_decimal_places(dec_places: int) -> int:
-    """
-    Return tag for float based on decimal places
-    :param dec_places: number of digits after decimal point
-    """
-    match dec_places:
-        case 0:
-            return Variant.FLOAT_NO_DECIMALS.value
-        case 1:
-            return Variant.FLOAT_1.value
-        case 2:
-            return Variant.FLOAT_2.value
-        case 3:
-            return Variant.FLOAT_3.value
-        case 4:
-            return Variant.FLOAT_4.value
-        case 5:
-            return Variant.FLOAT_5.value
-        case 6:
-            return Variant.FLOAT_6.value
-    raise ValueError(f"Unsupported decimal places {dec_places}")

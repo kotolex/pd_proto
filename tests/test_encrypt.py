@@ -1,8 +1,9 @@
 import random
 from unittest import TestCase, main
 
+from pd_proto import encode_float, encode_varint
 from pd_proto.decrypt import decode_varint
-from pd_proto.encrypt import encode_float, encode_varint, encrypt
+from pd_proto.encrypt import encrypt
 from pd_proto.errors import CycleLinksError, UnsupportedTypeError
 
 

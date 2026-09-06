@@ -7,7 +7,8 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 ### ToDo
  - string compress option on encryption
  - float limit on encryption
- - try Ocaml
+ - neg floats optimizations
+ - depth limit option
 
 
 ### Base point
@@ -15,4 +16,5 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 - Python version independent
 - order guarantee (except set)
 - smaller than pickle or json
+- faster than pickle
 - no dependencies
