@@ -22,6 +22,7 @@ jobs:
           entrypoint: /bin/sh
           args: >
             -c "
+            rustup default stable &&
             cargo test --verbose &&
             pip install pylint &&
             python3 -m pylint --rcfile pylint.toml . &&
