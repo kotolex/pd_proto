@@ -42,7 +42,9 @@ jobs:
       - name: Lint
         run: python3 -m pylint --rcfile pylint.toml .
 
-      - name: Run Rust tests
+      - name: Run Python tests
         run: |
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.cargo/bin:$PATH"
           maturin develop --release -- -C target-cpu=native
           python3 -m unittest discover -s tests
