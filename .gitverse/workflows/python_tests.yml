@@ -10,17 +10,17 @@ permissions:
   contents: read
 
 jobs:
-  tests_python_313:
+  tests_and_lint:
 
-    runs-on: ubuntu-cloud-runner
+    runs-on: ubuntu-latest
 
     container:
       image: ghcr.io/pyo3/maturin:latest
 
     steps:
-      - uses: actions/checkout@v3
-      - name: Cache Rust dependencies
-        uses: swatinem/rust-cache@v2
+      - uses: actions/checkout@v4
+#      - name: Cache Rust dependencies
+#        uses: swatinem/rust-cache@v2
       - name: Run Rust unit tests
         run: cargo test --verbose
       - name: Install dependencies
