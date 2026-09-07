@@ -18,20 +18,16 @@ jobs:
       image: ghcr.io/pyo3/maturin:latest
 
     steps:
-      - uses: actions/heroku@main
-      - name: Cache Rust dependencies
-        uses: swatinem/rust-cache@v2
-      - name: Run Rust unit tests
-        run: cargo test --verbose
-      - name: Install dependencies
-        run: |
-          pip install pylint
-      - name: Lint
-        run: |
-          python -m pylint --rcfile pylint.toml .
-      - name: Maturin
-        run: |
-          maturin develop --release -- -C target-cpu=native
-      - name: Unit-tests
-        run: |
-          python -m unittest discover -s tests
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run Tests in Maturin Container
+        uses: docker://ghcr.io/pyo3/maturin:latest
+        with:
+          args: >
+            sh -c "
+            cargo test --verbose &&
+            pip install pylint &&
+            python3 -m pylint --rcfile pylint.toml . &&
+            maturin develop --release -- -C target-cpu=native &&
+            python3 -m unittest discover -s tests
+            "
