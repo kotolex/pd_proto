@@ -51,3 +51,4 @@ jobs:
           maturin develop --release -- -C target-cpu=native
           python3 -m unittest discover -s tests
           python3 ./tests/compare.py
+          python3 ./tests/compare_json.py
