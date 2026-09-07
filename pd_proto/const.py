@@ -1,8 +1,6 @@
 from enum import IntEnum
 
 PROTOCOL_VERSION = 1
-FLOAT_FORMAT = ">d"
-UTF_8 = "utf-8"
 FLOAT_LIMIT = 268_435_455.0
 STRING_LIMIT = 100
 DEPTH_LIMIT = 1000

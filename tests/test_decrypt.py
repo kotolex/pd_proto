@@ -1,7 +1,7 @@
 from unittest import TestCase, main
 
 from pd_proto.decrypt import decrypt
-from pd_proto import encrypt
+from pd_proto import encrypt, DataCorruptionError
 from pd_proto.errors import (BytesLeftError, DecryptFloatError,
                              DecryptStringError, EmptyDataError,
                              ProtocolError)
@@ -99,11 +99,11 @@ class TestDecrypt(TestCase):
                 self.assertEqual(expected, decrypt(arg))
 
     def test_decrypt_fail_list_end_stream(self):
-        with self.assertRaises(ProtocolError):
+        with self.assertRaises(DataCorruptionError):
             print(decrypt(b'\x01\x0e\x03\n\x01\n\x02'))
 
     def test_decrypt_fail_tuple_end_stream(self):
-        with self.assertRaises(ProtocolError):
+        with self.assertRaises(DataCorruptionError):
             print(decrypt(b'\x01\x0f\x02\n\x01\n'))
 
     def test_decrypt_fail_string_end_stream(self):
@@ -111,7 +111,7 @@ class TestDecrypt(TestCase):
             print(decrypt(b'\x01*\xd1'))
 
     def test_decrypt_fail_varint(self):
-        with self.assertRaises(ProtocolError):
+        with self.assertRaises(DataCorruptionError):
             print(decrypt(b'\x01\n' + b'\x80'*20))
 
 

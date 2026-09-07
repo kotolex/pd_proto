@@ -5,10 +5,9 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 ## _We fight for each byte!_
 
 ### ToDo
- - decrypt in Rust
  - datetimes encrypt/decrypt
  - lists and tuples of small length
- - try to return something even on failed parse?
+ - optimize decryption
  - if ascii then simplify string encoding (no need to encode utf-8) 
 
 

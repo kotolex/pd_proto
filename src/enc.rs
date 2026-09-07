@@ -7,8 +7,6 @@ use pyo3::types::{PyAnyMethods, PySet};
 use pyo3::types::{PyDict, PyListMethods};
 use pyo3::types::{PyList, PyTuple};
 
-const TEN: u64 = 10;
-
 struct Options {
     max_depth: u32,
     string_length_limit: usize,
@@ -242,7 +240,7 @@ pub fn enc(
     buffer.push(protocol_version);
     let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
     let real_float = if float_limit < 0.0 { 0.0 } else { float_limit };
-    let real_string:usize = if string_length_limit < 0 {
+    let real_string: usize = if string_length_limit < 0 {
         0
     } else {
         string_length_limit as usize

@@ -1,15 +1,5 @@
 from pd_proto import SupportedTypes
 
-
-def exponent(number: float) -> int:
-    """
-    Returns the number of decimal places
-    :param number: float number
-    :return: int
-    """
-    ...
-
-
 def encode_varint(number: int) -> bytearray:
     """
     Converts a positive integer into bytes using the VarInt format
@@ -44,5 +34,25 @@ def real_encrypt(data: SupportedTypes, proto_version: int, max_depth: int, float
     :return: bytes representation of data
     :raises AttributeError when type is not supported
     :raises ValueError when parsing depth exceeded
+    """
+    ...
+
+def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
+    """
+    Decodes a VarInt representation into a number
+    :param bts: a sequence of bytes
+    :param offset: index to read from
+    :return: a non-negative integer (or 0) and the number of bytes read
+    """
+    ...
+
+
+def real_decrypt(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
+    """
+    Decodes bytes into an object of one of the supported types. Written in Rust.
+    :param bts: bytes representation of some object
+    :param offset: index to read from
+    :return: a pair of an object of one of the supported types and offset value
+    :raise ValueError: if no data can be decoded, not all bytes was parsed, or data corrupted
     """
     ...

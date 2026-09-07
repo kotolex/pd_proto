@@ -12,9 +12,9 @@ print(f"Size difference: {len(py_data) - len(pickle_data)} byte, {result:.2f}% b
 print("ENCRYPT")
 print(timeit("encrypt(data)", "from __main__ import encrypt, data, pickle", number=10000))
 print(timeit("pickle.dumps(data)", "from __main__ import encrypt, data, pickle", number=10000))
-# print("DECRYPT")
-# print(timeit("decrypt(py_data)", "from __main__ import decrypt, py_data, pickle, pickle_data"))
-# print(timeit("pickle.loads(pickle_data)", "from __main__ import decrypt, py_data, pickle, pickle_data"))
+print("DECRYPT")
+print(timeit("decrypt(py_data)", "from __main__ import decrypt, py_data, pickle, pickle_data", number=10000))
+print(timeit("pickle.loads(pickle_data)", "from __main__ import decrypt, py_data, pickle, pickle_data", number=10000))
 
 # At clean Python
 # Size difference: -35 byte, 44.87% better
@@ -40,3 +40,8 @@ print(timeit("pickle.dumps(data)", "from __main__ import encrypt, data, pickle",
 # -----------
 # 0.01072115599981771
 # 0.01356410300013522
+
+# on Rust (Windows 10, same speed~)
+# DECRYPT
+# 0.009897500000079162
+# 0.009580400001141243

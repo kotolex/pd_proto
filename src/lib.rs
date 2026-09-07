@@ -1,5 +1,6 @@
 mod arc;
 mod constants;
+mod dec;
 mod enc;
 mod pure;
 
@@ -11,13 +12,13 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 #[pymodule]
 mod pd_proto {
     use crate::constants::FLOAT_DEFAULT_LIMIT;
+    use crate::dec::*;
     use crate::enc::*;
-    use crate::pure::*;
     use pyo3::prelude::*;
 
     #[pyfunction]
-    fn exponent(val: f64) -> usize {
-        dec_places(val)
+    fn decode_varint(buffer: Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
+        d_varint(&buffer, offset)
     }
 
     #[pyfunction]
@@ -51,5 +52,14 @@ mod pd_proto {
             string_length_limit,
             float_limit,
         )
+    }
+
+    #[pyfunction]
+    fn real_decrypt(
+        py: Python<'_>,
+        buffer: Vec<u8>,
+        offset: usize,
+    ) -> PyResult<(Bound<'_, PyAny>, usize)> {
+        r_decrypt_base(py, buffer, offset)
     }
 }
