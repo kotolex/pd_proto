@@ -23,11 +23,16 @@ jobs:
       - name: Install Rust and Run Tests
         shell: bash
         run: |
-          apt-get update && apt-get install -y curl build-essential
-          curl --proto '=https' --tlsv1.2 -sSf https://rustup.rs | sh -s -- -y
+          apt-get update && apt-get install -y curl build-essential cmake
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . "$HOME/.cargo/env"
           export PATH="$HOME/.cargo/bin:$PATH"
           pip install pylint maturin
           cargo test --verbose
           python3 -m pylint --rcfile pylint.toml .
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+          python3 -m venv .venv
+          source .venv/bin/activate
           maturin develop --release -- -C target-cpu=native
           python3 -m unittest discover -s tests
+          python3 ./tests/compare.py
