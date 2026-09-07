@@ -36,13 +36,14 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\nd', 100),
             (b'\x01\x0bd', -100),
             (b'\x01\x16\x80\x02', 2.56),
+            (b'\x01 \x80\x02', -2.56),
             (b'\x01\x03', 0.0),
-            (b'\x01"test', "test"),
+            (b'\x01,test', "test"),
             (b'\x01\x05', []),
             (b'\x01\x0e\x01\n\x01', [1]),
             (b'\x01\x0e\x01\x01', [True]),
             (b'\x01\x0e\x02\n\x01\n\x02', [1,2]),
-            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\x1fa\x1fb', [1,2, ["a", "b"]]),
+            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02)a)b', [1,2, ["a", "b"]]),
             (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\n\x01\n\x02', [1,2, [1, 2]]),
             (b'\x01\x06', tuple()),
             (b'\x01\x0f\x03\t\x03\x00', (0, 0.0, None)),
@@ -57,6 +58,7 @@ class TestEncodeEncrypt(TestCase):
 
     def test_encode_float(self):
         self.assertEqual(bytearray(b'\x16\xba\x02'), encode_float(3.14))
+        self.assertEqual(bytearray(b' \xba\x02'), encode_float(-3.14))
         self.assertEqual(bytearray(b'\x03'), encode_float(0.0))
 
     def test_encrypt_raise_on_unsupported_type(self):

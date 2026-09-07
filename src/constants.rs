@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 
+pub const STRING_INDEX: usize = 40; // cause optimized strings starts with 41
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Variant {
@@ -28,22 +29,29 @@ pub enum Variant {
     Float4 = 24,
     Float5 = 25,
     Float6 = 26,
-    StringCompressed = 30,
-    String1 = 31,
-    String2 = 32,
-    String3 = 33,
-    String4 = 34,
-    String5 = 35,
-    String6 = 36,
-    String7 = 37,
-    String8 = 38,
-    String9 = 39,
-    String10 = 40,
-    String11 = 41,
-    String12 = 42,
-    String13 = 43,
-    String14 = 44,
-    String15 = 45,
+    FloatNoDecimalsNeg = 30,
+    Float1Neg = 31,
+    Float2Neg = 32,
+    Float3Neg = 33,
+    Float4Neg = 34,
+    Float5Neg = 35,
+    Float6Neg = 36,
+    StringCompressed = 40,
+    String1 = 41,
+    String2 = 42,
+    String3 = 43,
+    String4 = 44,
+    String5 = 45,
+    String6 = 46,
+    String7 = 47,
+    String8 = 48,
+    String9 = 49,
+    String10 = 50,
+    String11 = 51,
+    String12 = 52,
+    String13 = 53,
+    String14 = 54,
+    String15 = 55,
 }
 
 impl From<Variant> for u8 {
@@ -83,29 +91,36 @@ impl TryFrom<u8> for Variant {
             24 => Ok(Variant::Float4),
             25 => Ok(Variant::Float5),
             26 => Ok(Variant::Float6),
-            30 => Ok(Variant::StringCompressed),
-            31 => Ok(Variant::String1),
-            32 => Ok(Variant::String2),
-            33 => Ok(Variant::String3),
-            34 => Ok(Variant::String4),
-            35 => Ok(Variant::String5),
-            36 => Ok(Variant::String6),
-            37 => Ok(Variant::String7),
-            38 => Ok(Variant::String8),
-            39 => Ok(Variant::String9),
-            40 => Ok(Variant::String10),
-            41 => Ok(Variant::String11),
-            42 => Ok(Variant::String12),
-            43 => Ok(Variant::String13),
-            44 => Ok(Variant::String14),
-            45 => Ok(Variant::String15),
+            30 => Ok(Variant::FloatNoDecimalsNeg),
+            31 => Ok(Variant::Float1Neg),
+            32 => Ok(Variant::Float2Neg),
+            33 => Ok(Variant::Float3Neg),
+            34 => Ok(Variant::Float4Neg),
+            35 => Ok(Variant::Float5Neg),
+            36 => Ok(Variant::Float6Neg),
+            40 => Ok(Variant::StringCompressed),
+            41 => Ok(Variant::String1),
+            42 => Ok(Variant::String2),
+            43 => Ok(Variant::String3),
+            44 => Ok(Variant::String4),
+            45 => Ok(Variant::String5),
+            46 => Ok(Variant::String6),
+            47 => Ok(Variant::String7),
+            48 => Ok(Variant::String8),
+            49 => Ok(Variant::String9),
+            50 => Ok(Variant::String10),
+            51 => Ok(Variant::String11),
+            52 => Ok(Variant::String12),
+            53 => Ok(Variant::String13),
+            54 => Ok(Variant::String14),
+            55 => Ok(Variant::String15),
             _ => Err("Invalid Variant byte code"),
         }
     }
 }
 
-pub fn tag_by_decimal_places(dec_places: usize) -> u8 {
-    match dec_places {
+pub fn tag_by_decimal_places(dec_places: usize, is_negative: bool) -> u8 {
+    let tag = match dec_places {
         0 => Variant::FloatNoDecimals as u8,
         1 => Variant::Float1 as u8,
         2 => Variant::Float2 as u8,
@@ -114,5 +129,42 @@ pub fn tag_by_decimal_places(dec_places: usize) -> u8 {
         5 => Variant::Float5 as u8,
         6 => Variant::Float6 as u8,
         _ => panic!("Invalid decimal place code {}", dec_places),
+    };
+    if is_negative {
+        return tag + 10;
+    }
+    tag
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tag_by_decimal_places() {
+        assert_eq!(
+            Variant::FloatNoDecimals as u8,
+            tag_by_decimal_places(0, false)
+        );
+        assert_eq!(Variant::Float1 as u8, tag_by_decimal_places(1, false));
+        assert_eq!(Variant::Float2 as u8, tag_by_decimal_places(2, false));
+        assert_eq!(Variant::Float3 as u8, tag_by_decimal_places(3, false));
+        assert_eq!(Variant::Float4 as u8, tag_by_decimal_places(4, false));
+        assert_eq!(Variant::Float5 as u8, tag_by_decimal_places(5, false));
+        assert_eq!(Variant::Float6 as u8, tag_by_decimal_places(6, false));
+    }
+
+    #[test]
+    fn test_tag_by_decimal_places_negative() {
+        assert_eq!(
+            Variant::FloatNoDecimalsNeg as u8,
+            tag_by_decimal_places(0, true)
+        );
+        assert_eq!(Variant::Float1Neg as u8, tag_by_decimal_places(1, true));
+        assert_eq!(Variant::Float2Neg as u8, tag_by_decimal_places(2, true));
+        assert_eq!(Variant::Float3Neg as u8, tag_by_decimal_places(3, true));
+        assert_eq!(Variant::Float4Neg as u8, tag_by_decimal_places(4, true));
+        assert_eq!(Variant::Float5Neg as u8, tag_by_decimal_places(5, true));
+        assert_eq!(Variant::Float6Neg as u8, tag_by_decimal_places(6, true));
     }
 }

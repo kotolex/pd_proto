@@ -59,19 +59,20 @@ pub fn e_float(number: f64, buffer: &mut Vec<u8>) {
         buffer.push(Variant::FloatZero as u8);
         return;
     }
-    if number > 0.0 && number <= FLOAT_LIMIT {
-        let dec_places = dec_places(number);
+    let r_number = if number < 0.0 { -number } else { number };
+    if r_number <= FLOAT_LIMIT {
+        let dec_places = dec_places(r_number);
         if dec_places < 7 {
-            let tag = tag_by_decimal_places(dec_places);
+            let tag = tag_by_decimal_places(dec_places, number < 0.0);
             if dec_places == 0 {
                 buffer.push(tag);
-                var_int(number as u64, buffer);
+                var_int(r_number as u64, buffer);
                 return;
             }
             let pow = TEN.pow(dec_places as u32) as f64;
             let limit = FLOAT_LIMIT / pow;
-            if number < limit {
-                let int_value = (number * pow).round() as u64;
+            if r_number < limit {
+                let int_value = (r_number * pow).round() as u64;
                 buffer.push(tag);
                 var_int(int_value, buffer);
                 return;
@@ -90,7 +91,7 @@ fn e_string(value: &str, buffer: &mut Vec<u8>) {
     let encoded = value.as_bytes();
     let bytes_len = encoded.len();
     if bytes_len <= 15 {
-        let tag = 30 + bytes_len; // cause STRING_1=31 etc.
+        let tag = STRING_INDEX + bytes_len; // cause STRING_1=31 etc.
         buffer.push(tag as u8);
         buffer.extend(encoded);
         return;

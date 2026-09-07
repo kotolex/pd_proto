@@ -12,6 +12,8 @@ class TestDecrypt(TestCase):
     def test_decrypt(self):
         self.assertEqual(-910, decrypt(encrypt(-910)))
         self.assertEqual(910, decrypt(encrypt(910)))
+        self.assertEqual(-91.02, decrypt(encrypt(-91.02)))
+        self.assertEqual(91.0434, decrypt(encrypt(91.0434)))
         self.assertEqual(None, decrypt(encrypt(None)))
         self.assertEqual(True, decrypt(encrypt(True)))
         self.assertEqual(False, decrypt(encrypt(False)))
@@ -34,6 +36,7 @@ class TestDecrypt(TestCase):
 
     def test_decrypt_float(self):
         self.assertEqual(3.14, decrypt(b'\x01\x0c@\t\x1e\xb8Q\xeb\x85\x1f'))
+        self.assertEqual(-3.14, decrypt(b'\x01 \xba\x02'))
         self.assertEqual(0.0, decrypt(b'\x01\x03'))
 
     def test_decrypt_fail_on_empty(self):
@@ -105,7 +108,7 @@ class TestDecrypt(TestCase):
 
     def test_decrypt_fail_string_end_stream(self):
         with self.assertRaises(DecryptStringError):
-            print(decrypt(decrypt(b'\x01"111')))
+            print(decrypt(b'\x01*\xd1'))
 
     def test_decrypt_fail_varint(self):
         with self.assertRaises(ProtocolError):

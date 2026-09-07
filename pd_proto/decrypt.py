@@ -35,9 +35,15 @@ def decode_optimized_float(bts: bytes, offset: int, tag: int) -> tuple[float, in
     value, read = decode_varint(bts, offset)
     if tag == Variant.FLOAT_NO_DECIMALS.value:
         result = value + 0.0
+    elif tag == Variant.FLOAT_NO_DECIMALS_NEG.value:
+        result = value * (-1.0)
     else:
-        dec_places = tag - 20  # cause FLOAT_1 = 21, FLOAT_2=22 etc.
-        result = value / (10 ** dec_places)
+        if Variant.FLOAT_NO_DECIMALS.value < tag <= Variant.FLOAT_6.value:
+            dec_places = tag - 20  # cause FLOAT_1 = 21, FLOAT_2=22 etc.
+            result = value / (10 ** dec_places)
+        else:
+            dec_places = tag - 30  # cause FLOAT_1_NEG = 31, FLOAT_2_NEG=32 etc.
+            result = (value / (10 ** dec_places)) * (-1)
     return result, read
 
 
@@ -81,9 +87,9 @@ def decode_string(bts: bytes, offset: int, tag: int | None = None) -> tuple[str,
             raise DecryptStringError(f"Not enough bytes, need {size}, but have only {len(bts) - offset} bytes left")
         offset += read
     else:
-        last_index = (tag - 30) + offset  # cause STRING_1=31 etc.
+        last_index = (tag - 40) + offset  # cause STRING_1=41 etc.
         if len(bts) < last_index:
-            raise DecryptStringError(f"Not enough bytes, need {tag - 30}, but have only {len(bts) - offset} bytes left")
+            raise DecryptStringError(f"Not enough bytes, need {tag - 40}, but have only {len(bts) - offset} bytes left")
     text = bts[offset:last_index]
     if tag == Variant.STRING_COMPRESSED.value:
         text = zlib.decompress(text)
@@ -186,7 +192,8 @@ def _decrypt_base(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
         case Variant.FLOAT.value:
             value, off = decode_float(bts, offset)
             return value, offset + off
-        case t if Variant.FLOAT_NO_DECIMALS.value <= t <= Variant.FLOAT_6.value:
+        case t if (Variant.FLOAT_NO_DECIMALS.value <= t <= Variant.FLOAT_6.value or
+                   Variant.FLOAT_NO_DECIMALS_NEG.value <= t <= Variant.FLOAT_6_NEG.value):
             value, off = decode_optimized_float(bts, offset, t)
             return value, offset + off
         case Variant.INT_POSITIVE.value:

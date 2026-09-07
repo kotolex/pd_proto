@@ -3,7 +3,7 @@ from timeit import timeit
 
 from pd_proto import encrypt, decrypt
 
-data = ["text", [12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
+data = ["text", [12569, (-1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
 py_data = encrypt(data)
 pickle_data = pickle.dumps(data)
 result =  100 - (len(py_data) / (len(pickle_data) / 100))
@@ -29,6 +29,10 @@ print(timeit("pickle.dumps(data)", "from __main__ import encrypt, data, pickle",
 # ENCRYPT (MacOS 25% faster)
 # 0.006887415947858244
 # 0.009223082975950092
+
+# ENCRYPT (Windows 10, 25% faster)
+# 0.008552699997380842
+# 0.011504300000524381
 
 # ENCRYPT (Debian same speed~)
 # 0.012550916999771289
