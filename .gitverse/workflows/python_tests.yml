@@ -28,13 +28,16 @@ jobs:
       - name: Install Rust
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          . "$HOME/.cargo/env"
           export PATH="$HOME/.cargo/bin:$PATH"
 
       - name: Install dependencies
         run: pip install pylint maturin
 
       - name: Run Rust tests
-        run: cargo test --verbose
+        run: |
+          export PATH="$HOME/.cargo/bin:$PATH"
+          cargo test --verbose
 
       - name: Lint
         run: python3 -m pylint --rcfile pylint.toml .
