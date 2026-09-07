@@ -11,3 +11,4 @@ crate-type = ["cdylib"]
 [dependencies]
 flate2 = { version = "1.1.10", features = ["zlib-ng"] }
 pyo3 = "0.29.0"
+mimalloc = "0.1.52"

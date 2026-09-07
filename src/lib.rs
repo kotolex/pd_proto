@@ -5,6 +5,9 @@ mod pure;
 
 use pyo3::prelude::*;
 
+#[global_allocator]
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[pymodule]
 mod pd_proto {
     use crate::constants::FLOAT_DEFAULT_LIMIT;

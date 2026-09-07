@@ -3,8 +3,8 @@ from pd_proto.const import (PROTOCOL_VERSION, SupportedTypes, FLOAT_LIMIT, STRIN
 from pd_proto.errors import CycleLinksError, UnsupportedTypeError
 
 
-def encrypt(data: SupportedTypes, max_depth: int=DEPTH_LIMIT, float_limit: float = FLOAT_LIMIT,
-            string_length_limit: int=STRING_LIMIT) -> bytes:
+def encrypt(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: float = FLOAT_LIMIT,
+            string_length_limit: int = STRING_LIMIT) -> bytes:
     """
     Converts a supported Python type into a sequence of bytes
     :param data: an object of any allowed type
@@ -16,6 +16,7 @@ def encrypt(data: SupportedTypes, max_depth: int=DEPTH_LIMIT, float_limit: float
     to compress it. Use 0 to disable optimisation
     :return: bytes representation of data
     :raises UnsupportedTypeError when type is not supported
+    :raises CycleLinksError when collection contains link on self
     """
     try:
         result = real_encrypt(data, PROTOCOL_VERSION, max_depth, float_limit, string_length_limit)

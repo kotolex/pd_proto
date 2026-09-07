@@ -12,10 +12,10 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
  - if ascii then simplify string encoding (no need to encode utf-8) 
 
 
-### Base point
+### Base points
 - OS independent
 - Python version independent
 - order guarantee (except set)
 - smaller than pickle or json
-- faster than pickle
+- faster than pickle on MacOS and Windows10, same speed on Linux
 - no dependencies
