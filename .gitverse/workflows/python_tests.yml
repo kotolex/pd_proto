@@ -13,10 +13,6 @@ jobs:
   tests_and_lint:
 
     runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/pyo3/maturin:latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
