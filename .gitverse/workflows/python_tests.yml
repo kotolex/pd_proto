@@ -23,7 +23,7 @@ jobs:
           python-version: '3.12'
 
       - name: Update Libs
-        run: apt-get update && apt-get install -y curl build-essential
+        run: apt-get update && apt-get install -y curl build-essential cmake
 
       - name: Install Rust
         run: |
