@@ -47,5 +47,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
           export PATH="$HOME/.cargo/bin:$PATH"
           python3 -m venv .venv
+          source .venv/bin/activate
           maturin develop --release -- -C target-cpu=native
           python3 -m unittest discover -s tests
+          python3 ./tests/compare.py
