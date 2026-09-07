@@ -13,19 +13,27 @@ jobs:
   tests_and_lint:
 
     runs-on: ubuntu-latest
+    container:
+      image: python:3.12-slim
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Run Tests in Maturin Container
-        uses: docker://ghcr.io/pyo3/maturin:latest
-        with:
-          entrypoint: /bin/sh
-          args: >
-            -c "
-            rustup default stable &&
-            cargo test --verbose &&
-            pip install pylint &&
-            python3 -m pylint --rcfile pylint.toml . &&
-            maturin develop --release -- -C target-cpu=native &&
-            python3 -m unittest discover -s tests
-            "
+
+      - name: Install Rust and Run Tests
+        run: |
+          # Устанавливаем curl и компилятор C (нужен для сборки некоторых крейтов вроде flate2)
+          apt-get update && apt-get install -y curl build-essential
+          # Устанавливаем Rust в тихом режиме без интерактивных вопросов
+          curl --proto '=https' --tlsv1.2 -sSf https://rustup.rs | sh -s -- -y
+          # Добавляем Cargo в текущий путь выполнения (PATH)
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+          # Устанавливаем ваши питоновские пакеты
+          pip install pylint maturin pytest
+
+          # Запускаем вашу цепочку проверок
+          cargo test --verbose
+          python3 -m pylint --rcfile pylint.toml .
+          maturin develop --release -- -C target-cpu=native
+          python3 -m unittest discover -s tests
