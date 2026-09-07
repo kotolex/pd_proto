@@ -19,8 +19,9 @@ jobs:
       - name: Run Tests in Maturin Container
         uses: docker://ghcr.io/pyo3/maturin:latest
         with:
+          entrypoint: /bin/sh
           args: >
-            sh -c "
+            -c "
             cargo test --verbose &&
             pip install pylint &&
             python3 -m pylint --rcfile pylint.toml . &&
