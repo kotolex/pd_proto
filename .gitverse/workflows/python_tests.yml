@@ -1,32 +1,39 @@
-name: Python tests2
+name: Python CI
 
 on:
-  push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-
-permissions:
-  contents: read
+  workflow_dispatch:
 
 jobs:
-  tests_and_lint:
-
+  test:
     runs-on: ubuntu-latest
-    container:
-      image: python:3.12-slim
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Rust and Run Tests
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Update Libs
+        run: apt-get update && apt-get install -y curl build-essential
+
+      - name: Install Rust
         run: |
-          apt-get update && apt-get install -y curl build-essential
           curl --proto '=https' --tlsv1.2 -sSf https://rustup.rs | sh -s -- -y
           export PATH="$HOME/.cargo/bin:$PATH"
-          pip install pylint maturin
-          cargo test --verbose
-          python3 -m pylint --rcfile pylint.toml .
+
+      - name: Install dependencies
+        run: pip install pylint maturin
+
+      - name: Run Rust tests
+        run: cargo test --verbose
+
+      - name: Lint
+        run: python3 -m pylint --rcfile pylint.toml .
+
+      - name: Run Rust tests
+        run: |
           maturin develop --release -- -C target-cpu=native
           python3 -m unittest discover -s tests
