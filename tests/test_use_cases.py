@@ -67,6 +67,7 @@ class TestUseCases(TestCase):
             -5690.2345,
             -123.12345,
             -1.765432,
+            275.074313,
         )
         for param in params:
             with self.subTest(f"test opt floats ({param})"):

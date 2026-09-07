@@ -11,8 +11,8 @@ strip = true
 
 [project]
 name = "pd_proto"
-version = "0.5.1"
-description = "Binary protocol special for python with efforts to speed and size"
+version = "0.6.0"
+description = "Binary protocol special for python with focus on speed and size"
 readme = "README.md"
 authors = [{ name = "kotolex", email = "farofwell@gmail.com" }]
 license = "AGPL-3.0-only OR LicenseRef-Proprietary"

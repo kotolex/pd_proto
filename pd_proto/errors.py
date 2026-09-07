@@ -26,6 +26,7 @@ class ProtocolError(PDProtoError):
     Raises when the protocol is wrong
     """
 
+
 class DataCorruptionError(PDProtoError):
     """
     Raises when something wrong with encrypted data: not enough bytes to parse, bytes left after parsing, etc.
@@ -55,10 +56,6 @@ class BytesLeftError(DataCorruptionError):
     Raises when the parsing is over, but still have bytes left
     """
 
-class CollectionLengthError(DataCorruptionError):
-    """
-    Raises when the parsing is over, but elements count in a collection is not equal to predefine
-    """
 
 class CycleLinksError(DataCorruptionError):
     """

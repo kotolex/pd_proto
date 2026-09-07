@@ -1,7 +1,9 @@
+use std::cmp::Ordering;
 use std::convert::TryFrom;
 
 pub const STRING_INDEX: usize = 40; // cause optimized strings starts with 41
 pub const FLOAT_DEFAULT_LIMIT: f64 = 268_435_455.0;
+pub const TEN: u64 = 10;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Variant {
@@ -59,6 +61,12 @@ impl From<Variant> for u8 {
     #[inline(always)]
     fn from(variant: Variant) -> Self {
         variant as u8
+    }
+}
+
+impl PartialOrd for Variant {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        (*self as u8).partial_cmp(&(*other as u8))
     }
 }
 
