@@ -28,12 +28,19 @@ def encode_float(number: float) -> bytearray:
     ...
 
 
-def real_encrypt(data: SupportedTypes, proto_version: int) -> bytes:
+def real_encrypt(data: SupportedTypes, proto_version: int, max_depth: int, float_limit: float,
+                 string_length_limit: int) -> bytes:
     """
     Converts a supported Python type into a sequence of bytes. Implemented in Rust
 
     :param data: an object of any allowed type
     :param proto_version: version of the protocol
+    :param max_depth: maximum nesting depth for collections, raise an error if exceeded. Use 0 to disabled it, but it
+    can lead to error
+    :param float_limit: limit for float optimisation, if float less than that value, pd_proto will try to optimize it.
+    Use 0 to disable optimisation
+    :param string_length_limit: limit for string optimisation, if string greater than that value, pd_proto will try
+    to compress it. Use 0 to disable optimisation
     :return: bytes representation of data
     :raises AttributeError when type is not supported
     :raises ValueError when parsing depth exceeded

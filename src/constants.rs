@@ -1,6 +1,7 @@
 use std::convert::TryFrom;
 
 pub const STRING_INDEX: usize = 40; // cause optimized strings starts with 41
+pub const FLOAT_DEFAULT_LIMIT: f64 = 268_435_455.0;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Variant {
