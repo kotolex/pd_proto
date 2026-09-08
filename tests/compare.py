@@ -1,9 +1,7 @@
 import pickle
-from datetime import timedelta, timezone
+from datetime import timedelta, timezone, datetime
 from timeit import timeit
 from zoneinfo import ZoneInfo
-
-from isort.format import datetime
 
 from pd_proto import encrypt, decrypt
 
