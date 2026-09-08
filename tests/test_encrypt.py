@@ -1,5 +1,5 @@
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest import TestCase, main
 
 from pd_proto import encode_float, encode_varint, decode_varint
@@ -42,16 +42,16 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x05', []),
             (b'\x01\x0e\x01\n\x01', [1]),
             (b'\x01\x0e\x01\x01', [True]),
-            (b'\x01\x0e\x02\n\x01\n\x02', [1,2]),
-            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02)a)b', [1,2, ["a", "b"]]),
-            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\n\x01\n\x02', [1,2, [1, 2]]),
+            (b'\x01\x0e\x02\n\x01\n\x02', [1, 2]),
+            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02)a)b', [1, 2, ["a", "b"]]),
+            (b'\x01\x0e\x03\n\x01\n\x02\x0e\x02\n\x01\n\x02', [1, 2, [1, 2]]),
             (b'\x01\x06', tuple()),
             (b'\x01\x0f\x03\t\x03\x00', (0, 0.0, None)),
             (b'\x01\x07', set()),
             (b'\x01\x10\x02\t\x00', {0, None}),
             (b'\x01\x08', {}),
-            (b'\x01\x11\x02\n\x01\n\x02\n\x03\n\x04', {1:2, 3:4}),
-            (b'\x01\x1b\x0cA\xda\xa8\x0c\xf4\x00\x00\x00', datetime(2026, 9, 8, 21, 12, 0)),
+            (b'\x01\x11\x02\n\x01\n\x02\n\x03\n\x04', {1: 2, 3: 4}),
+            (b'\x01\x1c\x0cA\xda\xa8\x1e\x88\x00\x00\x00\t', datetime(2026, 9, 8, 21, 12, 0, tzinfo=timezone.utc)),
         )
         for expected, arg in params:
             with self.subTest(f"encrypt({arg})"):
