@@ -1,7 +1,7 @@
 from pd_proto import real_decrypt
 from pd_proto.const import (PROTOCOL_VERSION, SupportedTypes)
 from pd_proto.errors import (BytesLeftError, EmptyDataError, ProtocolError, DecryptStringError, DataCorruptionError,
-                             WrongTagError, DecryptFloatError)
+                             WrongTagError, DecryptFloatError, PDProtoError)
 
 STRING = "[STRING]"
 END = "[END]"
@@ -18,6 +18,8 @@ def decrypt(bts: bytes) -> SupportedTypes:
     :raise EmptyDataError: if no data can be decoded
     :raise ProtocolError: if a protocol version does not match the current one
     :raise BytesLeftError: if not all bytes was parsed
+    :raise WrongTagError: if wrong tag appears in data
+    :raise PDProtoError: on any other error in Rust backend
     """
     if len(bts) <= 1:
         raise EmptyDataError("Nothing to decrypt")
@@ -35,7 +37,7 @@ def decrypt(bts: bytes) -> SupportedTypes:
             raise WrongTagError(str_error.replace(TAG, "")) from None
         if FLOAT in str_error:
             raise DecryptFloatError(str_error.replace(FLOAT, "")) from None
-        raise
+        raise PDProtoError("Unexpected error") from e
     diff = len(bts) - offset - 1
     if diff > 0:
         raise BytesLeftError(f"Corrupt data, finish on parse bytes {offset}, but still have {diff} bytes unparsed")

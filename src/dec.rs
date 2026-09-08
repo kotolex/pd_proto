@@ -3,7 +3,7 @@ use crate::constants::{TEN, Variant};
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PySet, PyTuple};
+use pyo3::types::{PyDateTime, PyDelta, PyDict, PySet, PyTuple, PyTzInfo};
 
 const FLOAT_BYTES: usize = 8;
 
@@ -15,6 +15,9 @@ pub enum ParsedData {
     Int(i64),
     Float(f64),
     String(String),
+    DateTimeNoTz(f64),
+    DateTimeOffset((f64, i64)),
+    DateTimeIana((f64, String)),
     List(Vec<ParsedData>),
     Tuple(Vec<ParsedData>),
     Set(Vec<ParsedData>),
@@ -36,6 +39,21 @@ impl<'py> IntoPyObject<'py> for ParsedData {
             ParsedData::Float(val) => Ok(val.into_bound_py_any(py)?),
             ParsedData::String(val) => Ok(val.into_bound_py_any(py)?),
             ParsedData::List(val) => Ok(val.into_bound_py_any(py)?),
+            ParsedData::DateTimeNoTz(val) => {
+                let py_dt = PyDateTime::from_timestamp(py, val, None)?;
+                Ok(py_dt.into_bound_py_any(py)?)
+            }
+            ParsedData::DateTimeOffset((ts, off)) => {
+                let delta = PyDelta::new(py, 0, off as i32, 0, true)?;
+                let tzinfo = PyTzInfo::fixed_offset(py, delta)?;
+                let py_dt = PyDateTime::from_timestamp(py, ts, Some(&tzinfo))?;
+                Ok(py_dt.into_bound_py_any(py)?)
+            }
+            ParsedData::DateTimeIana((ts, off)) => {
+                let tzinfo = PyTzInfo::timezone(py, off)?;
+                let py_dt = PyDateTime::from_timestamp(py, ts, Some(&tzinfo))?;
+                Ok(py_dt.into_bound_py_any(py)?)
+            }
             ParsedData::Tuple(val) => {
                 let py_tuple = PyTuple::new(py, val)?;
                 Ok(py_tuple.into_bound_py_any(py)?)
@@ -205,6 +223,30 @@ fn d_base(buffer: &Vec<u8>, offset: usize) -> PyResult<(ParsedData, usize)> {
             Ok(Variant::TupleEmpty) => Ok((ParsedData::Tuple(EMPTY_VEC), new_offset)),
             Ok(Variant::SetEmpty) => Ok((ParsedData::Set(EMPTY_VEC), new_offset)),
             Ok(Variant::DictEmpty) => Ok((ParsedData::Dict(EMPTY_DICT), new_offset)),
+            Ok(Variant::DateTimeNoTz) => {
+                let (value, off) = d_float(buffer, new_offset + 1)?;
+                Ok((ParsedData::DateTimeNoTz(value), new_offset + off + 1))
+            }
+            Ok(Variant::DateTimeOffset) => {
+                let (value, off) = d_float(buffer, new_offset + 1)?;
+                let (pd, new_offset) = d_base(buffer, new_offset + off + 1)?;
+                match pd {
+                    ParsedData::Int(v) => Ok((ParsedData::DateTimeOffset((value, v)), new_offset)),
+                    _ => Err(PyValueError::new_err(
+                        "Unexpected type while parsing DateTime, expected Int",
+                    )),
+                }
+            }
+            Ok(Variant::DateTimeIana) => {
+                let (value, off) = d_float(buffer, new_offset + 1)?;
+                let (pd, new_offset) = d_base(buffer, new_offset + off + 1)?;
+                match pd {
+                    ParsedData::String(v) => Ok((ParsedData::DateTimeIana((value, v)), new_offset)),
+                    _ => Err(PyValueError::new_err(
+                        "Unexpected type while parsing DateTimeIana, expected String",
+                    )),
+                }
+            }
             Ok(Variant::Float) => {
                 let (value, off) = d_float(buffer, new_offset)?;
                 Ok((ParsedData::Float(value), new_offset + off))
@@ -277,5 +319,52 @@ mod tests {
         let (a, b) = d_float(&b, 1).ok().unwrap();
         assert_eq!(a, std::f64::consts::PI);
         assert_eq!(b, 8);
+    }
+
+    #[test]
+    fn test_dt_no_tz() {
+        let b = vec![1, 27, 12, 65, 218, 168, 5, 80, 74, 250, 240];
+        let (a, b) = d_base(&b, 1).ok().unwrap();
+        assert_eq!(a, ParsedData::DateTimeNoTz(1788876097.171566));
+        assert_eq!(11, b);
+    }
+
+    #[test]
+    fn test_dt_offset() {
+        let b = vec![1, 28, 12, 65, 218, 168, 5, 233, 49, 13, 246, 9];
+        let (a, b) = d_base(&b, 1).ok().unwrap();
+        assert_eq!(a, ParsedData::DateTimeOffset((1788876708.766477, 0)));
+        assert_eq!(12, b);
+    }
+
+    #[test]
+    fn test_dt_iana() {
+        let b = vec![
+            1, 29, 12, 65, 218, 168, 12, 140, 185, 155, 145, 53, 69, 117, 114, 111, 112, 101, 47,
+            76, 111, 110, 100, 111, 110,
+        ];
+        let (a, b) = d_base(&b, 1).ok().unwrap();
+        assert_eq!(
+            a,
+            ParsedData::DateTimeIana((1788883506.90012, "Europe/London".to_string()))
+        );
+        assert_eq!(25, b);
+    }
+
+    #[test]
+    fn test_dt_list() {
+        let b = vec![
+            1, 14, 2, 28, 12, 65, 218, 168, 23, 128, 0, 0, 0, 10, 160, 56, 28, 12, 65, 218, 168,
+            23, 128, 0, 0, 0, 10, 160, 56,
+        ];
+        let (a, b) = d_base(&b, 1).ok().unwrap();
+        assert_eq!(
+            a,
+            ParsedData::List(vec![
+                ParsedData::DateTimeOffset((1788894720.0, 7200)),
+                ParsedData::DateTimeOffset((1788894720.0, 7200))
+            ])
+        );
+        assert_eq!(29, b);
     }
 }

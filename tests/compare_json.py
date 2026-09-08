@@ -3,7 +3,18 @@ from timeit import timeit
 
 from pd_proto import encrypt, decrypt
 
-data = ["text", [12569, [-1.234, 4.5678], {1: [[1, 2], [3, 4]]}], None, True, False]
+data = {
+    "text": "Тестовая строка UTF-8",
+    "text_ascii": "some text",
+    "integer": 42,
+    "float_coords": (55.7558, 37.6173),
+    "boolean_true": True,
+    "boolean_false": False,
+    "none_value": None,
+    "unique_tags": ["apple", "banana", "cherry"],
+    "list_of_ints": [-1234124, 0, 123, 999, 123321445],
+    "nested_dict": {"key": -3.14},
+}
 py_data = encrypt(data)
 json_data = json.dumps(data)
 result =  100 - (len(py_data) / (len(json_data) / 100))

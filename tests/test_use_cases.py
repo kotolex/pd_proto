@@ -1,6 +1,8 @@
 import pickle
+from datetime import datetime, timezone, timedelta
 from string import ascii_letters, digits
 from unittest import TestCase, main
+from zoneinfo import ZoneInfo, available_timezones
 
 from pd_proto import encrypt
 from pd_proto.decrypt import decrypt
@@ -23,6 +25,8 @@ class TestUseCases(TestCase):
             {},
             [],
             "ЯЙË text",
+            datetime.now(timezone.utc),
+            datetime(2026, 9, 8, 21, 12, 0),
             {1, 2, None},
             [1000, 3.14, 3],
             [1000, -3.14, -3],
@@ -79,6 +83,41 @@ class TestUseCases(TestCase):
             with self.subTest(f"test opt strings ({param})"):
                 res = encrypt(param)
                 self.assertEqual(decrypt(res), param)
+
+    def test_dt_no_tz(self):
+        value = datetime.now()
+        crypted = encrypt(value)
+        back = decrypt(crypted)
+        self.assertEqual(value, back)
+
+    def test_dt_offset(self):
+        value = datetime.now(timezone.utc)
+        crypted = encrypt(value)
+        back = decrypt(crypted)
+        self.assertEqual(value, back)
+
+    def test_dt_iana(self):
+        value = datetime.now(tz=ZoneInfo("Europe/London"))
+        crypted = encrypt(value)
+        back = decrypt(crypted)
+        self.assertEqual(value, back)
+
+    def test_tz_in_list(self):
+        value = datetime.now()
+        value2 = datetime.now(timezone(timedelta(hours=-2)))
+        value3 = datetime.now(tz=ZoneInfo("Europe/London"))
+        a_list = [value, value2, value3, value, value2, value3]
+        crypted = encrypt(a_list)
+        back = decrypt(crypted)
+        self.assertEqual(a_list, back)
+
+    def test_all_timezones(self):
+        for tz in available_timezones():
+            with self.subTest(f"test timezone {tz}"):
+                value = datetime.now(tz=ZoneInfo(tz))
+                crypted = encrypt(value)
+                back = decrypt(crypted)
+                self.assertEqual(value, back)
 
 
 if __name__ == '__main__':

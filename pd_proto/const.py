@@ -1,11 +1,12 @@
 from enum import IntEnum
+from datetime import datetime
 
 PROTOCOL_VERSION = 1
 FLOAT_LIMIT = 268_435_455.0
 STRING_LIMIT = 100
 DEPTH_LIMIT = 1000
 
-SupportedTypes = None | bool | int | float | str | list | tuple | dict | set
+SupportedTypes = None | bool | int | float | str | list | tuple | dict | set | datetime
 SupportedCollections = list | tuple | dict | set
 
 
@@ -37,7 +38,10 @@ class Variant(IntEnum):
     FLOAT_3 = 23
     FLOAT_4 = 24
     FLOAT_5 = 25
-    FLOAT_6 = 26  # <- 27, 28, 29
+    FLOAT_6 = 26
+    DATE_TIME_NO_TZ = 27
+    DATE_TIME_OFFSET = 28
+    DATE_TIME_IANA = 29
     FLOAT_NO_DECIMALS_NEG = 30
     FLOAT_1_NEG = 31
     FLOAT_2_NEG = 32

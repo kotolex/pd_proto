@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 from unittest import TestCase, main
 
 from pd_proto import encode_float, encode_varint, decode_varint
@@ -50,6 +51,7 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01\x10\x02\t\x00', {0, None}),
             (b'\x01\x08', {}),
             (b'\x01\x11\x02\n\x01\n\x02\n\x03\n\x04', {1:2, 3:4}),
+            (b'\x01\x1b\x0cA\xda\xa8\x0c\xf4\x00\x00\x00', datetime(2026, 9, 8, 21, 12, 0)),
         )
         for expected, arg in params:
             with self.subTest(f"encrypt({arg})"):

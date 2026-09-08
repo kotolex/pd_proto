@@ -1,9 +1,28 @@
 import pickle
+from datetime import timedelta, timezone
 from timeit import timeit
+from zoneinfo import ZoneInfo
+
+from isort.format import datetime
 
 from pd_proto import encrypt, decrypt
 
-data = ["text", [12569, (-1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
+data = {
+    "text": "Тестовая строка UTF-8",
+    "text_ascii": "some text",
+    "integer": 42,
+    "float_coords": (55.7558, 37.6173),
+    "boolean_true": True,
+    "boolean_false": False,
+    "none_value": None,
+    "unique_tags": {"apple", "banana", "cherry"},
+    "list_of_ints": [-1234124, 0, 123, 999, 123321445],
+    "nested_dict": {"key": -3.14},
+    "datetime_naive": datetime(2026, 9, 8, 21, 12, 0),
+    "datetime_aware": datetime(2026, 9, 8, 21, 12, 0, tzinfo=ZoneInfo("Europe/Moscow")),
+    "datetime_offset": datetime(2026, 9, 8, 21, 12, 0, tzinfo=timezone(timedelta(hours=2))),
+    # "bytes_data": b"\x00\x01\x02\x03"
+}
 py_data = encrypt(data)
 pickle_data = pickle.dumps(data)
 result =  100 - (len(py_data) / (len(pickle_data) / 100))
@@ -41,7 +60,7 @@ print(timeit("pickle.loads(pickle_data)", "from __main__ import decrypt, py_data
 # 0.01072115599981771
 # 0.01356410300013522
 
-# on Rust (Windows 10, same speed~)
+# on Rust (Windows 10, faster)
 # DECRYPT
-# 0.009897500000079162
-# 0.009580400001141243
+# 0.03864210000028834
+# 0.04446980000648182

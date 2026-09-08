@@ -3,7 +3,9 @@ use crate::constants::*;
 use crate::pure::dec_places;
 use pyo3::exceptions::{PyAttributeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyAnyMethods, PySet};
+use pyo3::types::{
+    PyAnyMethods, PyDateTime, PyDelta, PyDeltaAccess, PyNone, PySet, PyTzInfoAccess,
+};
 use pyo3::types::{PyDict, PyListMethods};
 use pyo3::types::{PyList, PyTuple};
 
@@ -83,6 +85,35 @@ pub fn e_float(number: f64, buffer: &mut Vec<u8>, float_limit: f64) {
     buffer.extend_from_slice(&number.to_be_bytes());
 }
 
+fn e_dt(py: Python<'_>, item: Bound<PyDateTime>, buffer: &mut Vec<u8>) -> PyResult<()> {
+    let timestamp: f64 = item.call_method0("timestamp")?.extract()?;
+    match item.get_tzinfo() {
+        Some(tz_info) => match tz_info.getattr("key") {
+            Ok(key) => {
+                let key_str = key.to_string();
+                buffer.push(Variant::DateTimeIana as u8);
+                e_float(timestamp, buffer, FLOAT_DEFAULT_LIMIT);
+                e_string(&key_str, buffer, 100);
+            }
+            Err(_) => {
+                let delta: Bound<PyDelta> = tz_info
+                    .call_method1("utcoffset", (PyNone::get(py),))
+                    .unwrap()
+                    .extract()?;
+                let dt_offset: i32 = delta.get_seconds();
+                buffer.push(Variant::DateTimeOffset as u8);
+                e_float(timestamp, buffer, FLOAT_DEFAULT_LIMIT);
+                e_int(dt_offset as i64, buffer);
+            }
+        },
+        None => {
+            buffer.push(Variant::DateTimeNoTz as u8);
+            e_float(timestamp, buffer, FLOAT_DEFAULT_LIMIT);
+        }
+    }
+    Ok(())
+}
+
 fn e_string(value: &str, buffer: &mut Vec<u8>, string_limit: usize) {
     if value.is_empty() {
         buffer.push(Variant::StringEmpty as u8);
@@ -123,13 +154,16 @@ fn _parse_item(
     if item.is_instance_of::<pyo3::types::PyBool>() {
         let val: bool = item.extract()?;
         e_bool(val, buffer);
+    } else if item.is_instance_of::<PyDateTime>() {
+        let val = item.cast_into::<PyDateTime>()?;
+        e_dt(py, val, buffer)?;
     } else if item.is_instance_of::<pyo3::types::PyInt>() {
         let val: i64 = item.extract()?;
         e_int(val, buffer);
     } else if item.is_instance_of::<pyo3::types::PyFloat>() {
         let val: f64 = item.extract()?;
         e_float(val, buffer, opts.float_limit);
-    } else if item.is_instance_of::<pyo3::types::PyNone>() {
+    } else if item.is_instance_of::<PyNone>() {
         e_none(buffer);
     } else if item.is_instance_of::<pyo3::types::PyString>() {
         let val: &str = item.extract()?;

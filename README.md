@@ -5,10 +5,10 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 ## _We fight for each byte!_
 
 ### ToDo
- - datetimes encrypt/decrypt
  - lists and tuples of small length
  - optimize decryption
- - if ascii then simplify string encoding (no need to encode utf-8) 
+ - bytes!
+
 
 
 ### Base points
@@ -19,4 +19,4 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 - faster than pickle on MacOS and Windows10, same speed on Linux
 - faster than json for all OS (2-4 times faster)
 - no dependencies
-- can use nan, inf, -inf for float (json cant)
+- can use nan, inf, -inf for float, can use datetimes (json cant)
