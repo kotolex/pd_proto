@@ -7,7 +7,7 @@ from pd_proto.errors import (BytesLeftError, ParseFloatError, DataCorruptionErro
                              ProtocolError)
 
 
-class Testloads(TestCase):
+class TestLoads(TestCase):
 
     def test_loads(self):
         self.assertEqual(-910, loads(dumps(-910)))

@@ -8,5 +8,5 @@ from .errors import *
 __all__ = (
     "dumps", "loads", "ProtocolError", "UnsupportedTypeError", "PDProtoError", "WrongTagError",
     "EmptyDataError", "BytesLeftError", "ParseFloatError", "ParseStringError", "DataCorruptionError",
-    "PROTOCOL_VERSION", "SupportedTypes", "SupportedCollections"
+    "PROTOCOL_VERSION", "SupportedTypes", "SupportedCollections", "IntegerOutOfBoundsError"
 )

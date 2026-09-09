@@ -5,6 +5,8 @@ PROTOCOL_VERSION = 1
 FLOAT_LIMIT = 268_435_455.0
 STRING_LIMIT = 100
 DEPTH_LIMIT = 1000
+MIN_INT = -9_223_372_036_854_775_808
+MAX_INT = 9_223_372_036_854_775_807
 
 SupportedTypes = None | bool | int | float | str | bytes | list | tuple | dict | set | datetime
 SupportedCollections = list | tuple | dict | set

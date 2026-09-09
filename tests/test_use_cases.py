@@ -36,6 +36,8 @@ class TestUseCases(TestCase):
             [[12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}]],
             [{1: 1, 2: 2}, {3: {4: 4}}],
             [(ascii_letters + digits) * 3, 1234567890],
+            9_223_372_036_854_775_807,
+            -9_223_372_036_854_775_808,
         )
         for param in params:
             with self.subTest(f"test decrypt=encrypt ({param})"):

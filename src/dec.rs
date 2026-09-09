@@ -109,7 +109,7 @@ pub fn d_varint(bts: &Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
     Ok((number, bytes_read))
 }
 
-pub fn d_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
+fn d_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
     if buffer.len() < offset + FLOAT_BYTES {
         let e_m = format!(
             "[FLOAT] Not enough bytes, need {}, but have only {} bytes left",
@@ -158,7 +158,7 @@ fn d_optimized_int(tag: u8) -> i64 {
     }
 }
 
-pub fn d_string(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(String, usize)> {
+fn d_string(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(String, usize)> {
     let last_index;
     let mut new_offset = offset;
     let (value, read) = d_varint(buffer, offset)?;
@@ -194,7 +194,7 @@ pub fn d_string(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(String, u
     Ok((string, last_index))
 }
 
-pub fn d_list(
+fn d_list(
     buffer: &Vec<u8>,
     offset: usize,
     tag: Variant,
@@ -218,7 +218,7 @@ pub fn d_list(
     Ok((result, new_offset))
 }
 
-pub fn d_tuple(
+fn d_tuple(
     buffer: &Vec<u8>,
     offset: usize,
     tag: Variant,
@@ -247,7 +247,7 @@ pub fn d_tuple(
     Ok((result, new_offset))
 }
 
-pub fn d_set(
+fn d_set(
     buffer: &Vec<u8>,
     offset: usize,
     tag: Variant,
@@ -258,7 +258,7 @@ pub fn d_set(
     Ok((result, new_offset))
 }
 
-pub fn d_dict(
+fn d_dict(
     buffer: &Vec<u8>,
     offset: usize,
     max_depth: u32,
@@ -277,7 +277,7 @@ pub fn d_dict(
     Ok((result, new_offset))
 }
 
-pub fn d_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
+fn d_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
     let (size, read) = d_varint(buffer, offset)?;
     let new_offset = offset + read;
     let data = buffer[new_offset..new_offset + size as usize].to_vec();

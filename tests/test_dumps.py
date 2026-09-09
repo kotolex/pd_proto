@@ -4,10 +4,10 @@ from unittest import TestCase, main
 
 from pd_proto import encode_float, encode_varint, decode_varint
 from pd_proto.dump import dumps
-from pd_proto.errors import CycleLinksError, UnsupportedTypeError
+from pd_proto.errors import CycleLinksError, UnsupportedTypeError, IntegerOutOfBoundsError
 
 
-class TestEncodedumps(TestCase):
+class TestDumps(TestCase):
 
     def test_encode_varint(self):
         self.assertEqual(b'\x7f', bytes(encode_varint(127)))
@@ -35,6 +35,8 @@ class TestEncodedumps(TestCase):
             (b'\x01\x12', b''),
             (b'\x01\t', 0),
             (b'\x01\x0bd', -100),
+            (b'\x01\x0b\x80\x80\x80\x80\x80\x80\x80\x80\x80\x01', -9223372036854775808),
+            (b'\x01\n\xff\xff\xff\xff\xff\xff\xff\xff\x7f', 9_223_372_036_854_775_807),
             (b'\x01\x16\x80\x02', 2.56),
             (b'\x01 \x80\x02', -2.56),
             (b'\x01\x03', 0.0),
@@ -94,15 +96,23 @@ class TestEncodedumps(TestCase):
         self.assertEqual(bytearray(b' \xba\x02'), encode_float(-3.14))
         self.assertEqual(bytearray(b'\x03'), encode_float(0.0))
 
-    def test_encrypt_raise_on_unsupported_type(self):
+    def test_dumps_raise_on_unsupported_type(self):
         with self.assertRaises(UnsupportedTypeError):
             dumps(self)
 
-    def test_encrypt_raise_on_recursion(self):
+    def test_dumps_raise_on_recursion(self):
         a_l = [1, 2]
         a_l.append(a_l)
         with self.assertRaises(CycleLinksError):
             dumps(a_l)
+
+    def test_dumps_raise_on_too_big_int(self):
+        with self.assertRaises(IntegerOutOfBoundsError):
+            dumps(9_223_372_036_854_775_810)
+            
+    def test_dumps_raise_on_too_small_int(self):
+        with self.assertRaises(IntegerOutOfBoundsError):
+            dumps(-9_223_372_036_854_775_810)
 
 
 if __name__ == '__main__':

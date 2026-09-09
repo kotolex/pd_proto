@@ -26,6 +26,10 @@ class ProtocolError(PDProtoError):
     Raises when the protocol is wrong
     """
 
+class IntegerOutOfBoundsError(PDProtoError):
+    """
+    Raises when int (positive or negative) is over the limit
+    """
 
 class DataCorruptionError(PDProtoError):
     """

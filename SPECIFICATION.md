@@ -81,8 +81,8 @@ Note: An asterisk * indicates a variable size dependent on the payload (e.g., st
 | `set()` (set)                         |      `7`      |      1       | Represents empty set                                                                                             |
 | `{}` (dict)                           |      `8`      |      1       | Represents empty dict                                                                                            |
 | `0` (int)                             |      `9`      |      1       | Represents integer 0                                                                                             |
-| positive integer                      |     `10`      |     1-8      | Represents positive integer (>0), limited by u64 type in Rust (18_446_744_073_709_551_615)                       |
-| negative integer                      |     `11`      |     1-8      | Represents negative integer (<0), limited by u64 type in Rust (18_446_744_073_709_551_615) with -                |
+| positive integer                      |     `10`      |     1-8      | Represents positive integer (>0), limited by i64 type in Rust (9_223_372_036_854_775_807)                        |
+| negative integer                      |     `11`      |     1-8      | Represents negative integer (<0), limited by i64 type in Rust (-9_223_372_036_854_775_808)                       |
 | float                                 |     `12`      |      8       | Represents float                                                                                                 |
 | string                                |     `13`      |     2-*      | Represents non-empty string, always use UTF-8 encoding                                                           |
 | list                                  |     `14`      |     3-*      | Represents non-empty list                                                                                        |
@@ -163,7 +163,7 @@ Note: An asterisk * indicates a variable size dependent on the payload (e.g., st
 
 ### Integer
 
-Unlike Python's arbitrary-precision integers, primitives within this protocol are bounded by Rust's u64::MAX value (18_446_744_073_709_551_615). 
+Unlike Python's arbitrary-precision integers, primitives within this protocol are bounded by Rust's i64::MAX value (9_223_372_036_854_775_807). 
 Negative integers are converted to positive numbers by stripping the minus sign and are prefixed with a dedicated tag 11, inheriting the same threshold. 
 Integers are serialized via the Varint algorithm described above; the storage delta becomes apparent for values greater than 127. 
 
