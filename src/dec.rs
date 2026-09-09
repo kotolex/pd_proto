@@ -3,7 +3,7 @@ use crate::constants::{TEN, Variant};
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::{PyDateTime, PyDelta, PyDict, PySet, PyTuple, PyTzInfo};
+use pyo3::types::{PyBytes, PyDateTime, PyDelta, PyDict, PySet, PyTuple, PyTzInfo};
 
 const FLOAT_BYTES: usize = 8;
 
@@ -12,6 +12,8 @@ pub enum ParsedData {
     Null,
     BoolTrue,
     BoolFalse,
+    BytesEmpty,
+    Bytes(Vec<u8>),
     Int(i64),
     Float(f64),
     String(String),
@@ -35,6 +37,7 @@ impl<'py> IntoPyObject<'py> for ParsedData {
             ParsedData::Null => Ok(py.None().into_bound_py_any(py)?),
             ParsedData::BoolTrue => Ok(true.into_bound_py_any(py)?),
             ParsedData::BoolFalse => Ok(false.into_bound_py_any(py)?),
+            ParsedData::BytesEmpty => Ok(PyBytes::new(py, &[]).into_bound_py_any(py)?),
             ParsedData::Int(val) => Ok(val.into_bound_py_any(py)?),
             ParsedData::Float(val) => Ok(val.into_bound_py_any(py)?),
             ParsedData::String(val) => Ok(val.into_bound_py_any(py)?),
@@ -68,6 +71,10 @@ impl<'py> IntoPyObject<'py> for ParsedData {
                     py_dict.set_item(k, v)?;
                 }
                 Ok(py_dict.into_bound_py_any(py)?)
+            }
+            ParsedData::Bytes(val) => {
+                let py_bytes = PyBytes::new(py, val.as_slice());
+                Ok(py_bytes.into_bound_py_any(py)?)
             }
         }
     }
@@ -209,6 +216,13 @@ pub fn d_dict(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<(ParsedData, Par
     Ok((result, new_offset))
 }
 
+pub fn d_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
+    let (size, read) = d_varint(buffer, offset)?;
+    let new_offset = offset + read;
+    let data = buffer[new_offset..new_offset + size as usize].to_vec();
+    Ok((data, new_offset + size as usize))
+}
+
 fn d_base(buffer: &Vec<u8>, offset: usize) -> PyResult<(ParsedData, usize)> {
     if let Some(&tag) = buffer.get(offset) {
         let new_offset = offset + 1;
@@ -223,6 +237,7 @@ fn d_base(buffer: &Vec<u8>, offset: usize) -> PyResult<(ParsedData, usize)> {
             Ok(Variant::TupleEmpty) => Ok((ParsedData::Tuple(EMPTY_VEC), new_offset)),
             Ok(Variant::SetEmpty) => Ok((ParsedData::Set(EMPTY_VEC), new_offset)),
             Ok(Variant::DictEmpty) => Ok((ParsedData::Dict(EMPTY_DICT), new_offset)),
+            Ok(Variant::BytesEmpty) => Ok((ParsedData::BytesEmpty, new_offset)),
             Ok(Variant::DateTimeNoTz) => {
                 let (value, off) = d_float(buffer, new_offset + 1)?;
                 Ok((ParsedData::DateTimeNoTz(value), new_offset + off + 1))
@@ -289,6 +304,10 @@ fn d_base(buffer: &Vec<u8>, offset: usize) -> PyResult<(ParsedData, usize)> {
             Ok(Variant::Dict) => {
                 let (value, offset) = d_dict(buffer, new_offset)?;
                 Ok((ParsedData::Dict(value), offset))
+            }
+            Ok(Variant::Bytes) => {
+                let (value, offset) = d_bytes(buffer, new_offset)?;
+                Ok((ParsedData::Bytes(value), offset))
             }
             _ => {
                 let e_m = format!("[TAG] Unknown tag {}", tag);
@@ -366,5 +385,21 @@ mod tests {
             ])
         );
         assert_eq!(29, b);
+    }
+
+    #[test]
+    fn test_empty_bytes() {
+        let b = vec![1, 18];
+        let (a, b) = d_base(&b, 1).ok().unwrap();
+        assert_eq!(a, ParsedData::BytesEmpty);
+        assert_eq!(2, b);
+    }
+
+    #[test]
+    fn test_bytes() {
+        let b = vec![1, 19, 2, 1, 18];
+        let (a, b) = d_base(&b, 1).ok().unwrap();
+        assert_eq!(a, ParsedData::Bytes(vec![1, 18]));
+        assert_eq!(5, b);
     }
 }

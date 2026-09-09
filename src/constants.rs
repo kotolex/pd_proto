@@ -25,6 +25,8 @@ pub enum Variant {
     Tuple = 15,
     Set = 16,
     Dict = 17,
+    BytesEmpty = 18,
+    Bytes = 19,
     FloatNoDecimals = 20,
     Float1 = 21,
     Float2 = 22,
@@ -96,6 +98,8 @@ impl TryFrom<u8> for Variant {
             15 => Ok(Variant::Tuple),
             16 => Ok(Variant::Set),
             17 => Ok(Variant::Dict),
+            18 => Ok(Variant::BytesEmpty),
+            19 => Ok(Variant::Bytes),
             20 => Ok(Variant::FloatNoDecimals),
             21 => Ok(Variant::Float1),
             22 => Ok(Variant::Float2),
@@ -146,7 +150,7 @@ pub fn tag_by_decimal_places(dec_places: usize, is_negative: bool) -> u8 {
         _ => panic!("Invalid decimal place code {}", dec_places),
     };
     if is_negative {
-        return tag + 10;
+        return tag + 10; // cause FloatNeg1 =31 and Float1=21
     }
     tag
 }

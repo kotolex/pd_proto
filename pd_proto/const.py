@@ -6,7 +6,7 @@ FLOAT_LIMIT = 268_435_455.0
 STRING_LIMIT = 100
 DEPTH_LIMIT = 1000
 
-SupportedTypes = None | bool | int | float | str | list | tuple | dict | set | datetime
+SupportedTypes = None | bool | int | float | str | bytes | list | tuple | dict | set | datetime
 SupportedCollections = list | tuple | dict | set
 
 
@@ -31,7 +31,9 @@ class Variant(IntEnum):
     LIST = 14
     TUPLE = 15
     SET = 16
-    DICT = 17  # <- 18, 19
+    DICT = 17
+    BYTES_EMPTY = 18
+    BYTES = 19
     FLOAT_NO_DECIMALS = 20
     FLOAT_1 = 21
     FLOAT_2 = 22

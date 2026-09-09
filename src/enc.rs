@@ -141,6 +141,16 @@ fn e_string(value: &str, buffer: &mut Vec<u8>, string_limit: usize) {
     buffer.extend(encoded);
 }
 
+fn e_bytes(value: Vec<u8>, buffer: &mut Vec<u8>) {
+    if value.len() == 0 {
+        buffer.push(Variant::BytesEmpty as u8)
+    } else {
+        buffer.push(Variant::Bytes as u8);
+        var_int(value.len() as u64, buffer);
+        buffer.extend(value);
+    }
+}
+
 fn _parse_item(
     py: Python<'_>,
     item: Bound<PyAny>,
@@ -168,6 +178,9 @@ fn _parse_item(
     } else if item.is_instance_of::<pyo3::types::PyString>() {
         let val: &str = item.extract()?;
         e_string(val, buffer, opts.string_length_limit);
+    } else if item.is_instance_of::<pyo3::types::PyBytes>() {
+        let val: Vec<u8> = item.extract()?;
+        e_bytes(val, buffer);
     } else if item.is_instance_of::<PyList>() {
         let sub_list: &Bound<'_, PyList> = item.cast::<PyList>().unwrap();
         e_list(py, &sub_list, depth + 1, buffer, opts)?;

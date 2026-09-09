@@ -84,6 +84,24 @@ class TestUseCases(TestCase):
                 res = encrypt(param)
                 self.assertEqual(decrypt(res), param)
 
+    def test_empty_bytes(self):
+        value = b''
+        crypted = encrypt(value)
+        back = decrypt(crypted)
+        self.assertEqual(value, back)
+
+    def test_bytes(self):
+        value = b'\x01\x13\x02\x01\x12'
+        crypted = encrypt(value)
+        back = decrypt(crypted)
+        self.assertEqual(value, back)
+
+    def test_bytes_in_list(self):
+        value = [b'1', b'', b'2']
+        crypted = encrypt(value)
+        back = decrypt(crypted)
+        self.assertEqual(value, back)
+
     def test_dt_no_tz(self):
         value = datetime.now()
         crypted = encrypt(value)
@@ -115,6 +133,14 @@ class TestUseCases(TestCase):
         for tz in available_timezones():
             with self.subTest(f"test timezone {tz}"):
                 value = datetime.now(tz=ZoneInfo(tz))
+                crypted = encrypt(value)
+                back = decrypt(crypted)
+                self.assertEqual(value, back)
+
+    def test_all_offsets(self):
+        for tz in range(-12, 15):
+            with self.subTest(f"test timezone offset {tz}"):
+                value = datetime.now(tz=timezone(timedelta(hours=tz)))
                 crypted = encrypt(value)
                 back = decrypt(crypted)
                 self.assertEqual(value, back)

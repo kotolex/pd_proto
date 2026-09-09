@@ -19,7 +19,7 @@ data = {
     "datetime_naive": datetime(2026, 9, 8, 21, 12, 0),
     "datetime_aware": datetime(2026, 9, 8, 21, 12, 0, tzinfo=ZoneInfo("Europe/Moscow")),
     "datetime_offset": datetime(2026, 9, 8, 21, 12, 0, tzinfo=timezone(timedelta(hours=2))),
-    # "bytes_data": b"\x00\x01\x02\x03"
+    "bytes_data": b"\x00\x01\x02\x03"
 }
 py_data = encrypt(data)
 pickle_data = pickle.dumps(data)

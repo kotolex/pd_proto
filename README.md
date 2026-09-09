@@ -7,7 +7,9 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 ### ToDo
  - lists and tuples of small length
  - optimize decryption
- - bytes!
+ - depth for decypyt
+ - rust docs
+ - int 1
 
 
 
