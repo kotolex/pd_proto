@@ -6,6 +6,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDateTime, PyDelta, PyDict, PySet, PyTuple, PyTzInfo};
 
 const FLOAT_BYTES: usize = 8;
+const EMPTY_VEC: Vec<ParsedData> = Vec::new();
+const EMPTY_DICT: Vec<(ParsedData, ParsedData)> = Vec::new();
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParsedData {
@@ -25,8 +27,7 @@ pub enum ParsedData {
     Set(Vec<ParsedData>),
     Dict(Vec<(ParsedData, ParsedData)>),
 }
-const EMPTY_VEC: Vec<ParsedData> = Vec::new();
-const EMPTY_DICT: Vec<(ParsedData, ParsedData)> = Vec::new();
+
 impl<'py> IntoPyObject<'py> for ParsedData {
     type Target = PyAny;
     type Output = Bound<'py, PyAny>;
@@ -406,6 +407,8 @@ pub fn r_decrypt_base(
     let (result, new_offset) = d_base(&buffer, offset, real_depth, 1)?;
     Ok((result.into_pyobject(py)?, new_offset))
 }
+
+
 #[cfg(test)]
 mod tests {
     use super::*;

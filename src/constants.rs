@@ -1,3 +1,5 @@
+//! Constants to use in all libraries
+
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 
@@ -6,6 +8,7 @@ pub const INT_INDEX: usize = 60; // cause optimized ints starts with 61
 pub const LIST_INDEX: usize = 80; // cause optimized lists starts with 81
 pub const FLOAT_DEFAULT_LIMIT: f64 = 268_435_455.0;
 pub const TEN: u64 = 10;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum Variant {

@@ -7,7 +7,7 @@ mod pure;
 use pyo3::prelude::*;
 
 #[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc; // should speed up allocations in Linux
 
 #[pymodule]
 mod pd_proto {

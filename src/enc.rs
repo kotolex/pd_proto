@@ -15,6 +15,7 @@ struct Options {
     string_length_limit: usize,
     float_limit: f64,
 }
+
 pub fn var_int(mut number: u64, buffer: &mut Vec<u8>) {
     let mut buf = [0u8; 10];
     let mut idx = 0;

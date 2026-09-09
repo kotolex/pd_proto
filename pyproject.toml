@@ -33,7 +33,7 @@ classifiers = [
 ]
 keywords = ["binary", "python", "protocol", "pd_proto", "PeaceData", "PDProto"]
 dependencies = []
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 
 [project.urls]
 Homepage = "https://github.com/kotolex/pd_proto"

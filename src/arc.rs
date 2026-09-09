@@ -1,3 +1,5 @@
+//! arc module used for compress and decompress utf-8 encoded strings
+
 use flate2::Compression;
 use flate2::write::ZlibDecoder;
 use flate2::write::ZlibEncoder;

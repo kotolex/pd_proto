@@ -19,12 +19,14 @@ The protocol enforces **packed binary alignment (no padding)** and utilizes **Bi
 Data fields are laid out sequentially, directly following the version byte. Each data element begins with a **Type Tag** that defines its type, and optionally encodes its value or length.
 
 ### Length Encoding (Varint)
+
 To minimize payload size, all integers and lengths of dynamic collections (such as bytes and str) are encoded using **Variable-length integers (Varints)**. 
 
 This encoding utilizes the Most Significant Bit (MSB) as a continuation flag, using base-128 format (7 bits per byte for actual data). For more technical details on how Varint / LEB128 works, refer to:
 - [Wikipedia: Variable-length integer](https://wikipedia.org)
 
 ### Data Compression (Used for strings only)
+
 Payload compression is implemented using the **DEFLATE** algorithm (RFC 1951) wrapped in the **Zlib data format** (RFC 1950) with an **Adler-32** checksum.
 
 - **Python implementation**: zlib.compress() / zlib.decompress()
@@ -54,6 +56,7 @@ Non-empty collections (such as tuple) encode the total **element count** (not th
 ![Tuple of 6 Nones Representation](img/4.png)
 
 ### Optimized Inline Tags
+
 "Optimizing" tags are dedicated markers that inherently imply the exact layout or dimension of a structure, eliminating the need to write separate size descriptors. For instance, the TUPLE_2 tag [56] pre-defines a tuple containing exactly 2 elements; the parser expects the elements immediately after the tag without parsing a length descriptor.
 
 *Example: Complete byte representation of an optimized tuple (None, None) in Protocol Version 1:* [1, 56, 0, 0]
@@ -65,7 +68,7 @@ Non-empty collections (such as tuple) encode the total **element count** (not th
 The protocol natively processes standard built-in Python types exclusively:
 `None` | `bool` | `int` | `float` | `str` | `bytes` | `list` | `tuple` | `dict` | `set` | `datetime`
 
-Nested collections may only encapsulate the aforementioned types.
+Collections (`list` | `tuple` | `dict` | `set`) may only encapsulate the aforementioned types.
 
 Note: An asterisk * indicates a variable size dependent on the payload (e.g., string length)
 
@@ -195,8 +198,6 @@ Frequently recurring short strings are optimized using inline length tags (e.g.,
 **Important Notice!** Length metrics strictly evaluate raw byte count rather than character/grapheme count, which can vary across international character sets.
 
 ### Datetime
-
-Стандартный datetime может быть представлен в 3 видах:
 
 Standard datetime objects map to one of three protocol representations:
 
