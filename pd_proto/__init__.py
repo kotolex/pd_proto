@@ -1,12 +1,12 @@
-from .pd_proto import real_encrypt, encode_float, encode_varint, decode_varint, real_decrypt # pylint: disable=no-name-in-module
+from .pd_proto import pack, unpack, encode_float, encode_varint, decode_varint # pylint: disable=no-name-in-module
 from .const import (PROTOCOL_VERSION, SupportedCollections, SupportedTypes)
-from .decrypt import decrypt
-from .encrypt import encrypt
+from .dump import dumps
+from .load import loads
 from .errors import *
 
 
 __all__ = (
-    "encrypt", "decrypt", "ProtocolError", "UnsupportedTypeError", "PDProtoError", "WrongTagError",
-    "EmptyDataError", "BytesLeftError", "DecryptFloatError", "DecryptStringError", "DataCorruptionError",
+    "dumps", "loads", "ProtocolError", "UnsupportedTypeError", "PDProtoError", "WrongTagError",
+    "EmptyDataError", "BytesLeftError", "ParseFloatError", "ParseStringError", "DataCorruptionError",
     "PROTOCOL_VERSION", "SupportedTypes", "SupportedCollections"
 )

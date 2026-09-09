@@ -1,10 +1,10 @@
-from pd_proto import real_encrypt
+from pd_proto import pack
 from pd_proto.const import (PROTOCOL_VERSION, SupportedTypes, FLOAT_LIMIT, STRING_LIMIT, DEPTH_LIMIT)
 from pd_proto.errors import CycleLinksError, UnsupportedTypeError, PDProtoError
 
 
-def encrypt(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: float = FLOAT_LIMIT,
-            string_length_limit: int = STRING_LIMIT) -> bytes:
+def dumps(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: float = FLOAT_LIMIT,
+          string_length_limit: int = STRING_LIMIT) -> bytes:
     """
     Converts a supported Python type into a sequence of bytes
     :param data: an object of any allowed type
@@ -19,7 +19,7 @@ def encrypt(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: flo
     :raises CycleLinksError when collection contains link on self
     """
     try:
-        result = real_encrypt(data, PROTOCOL_VERSION, max_depth, float_limit, string_length_limit)
+        result = pack(data, PROTOCOL_VERSION, max_depth, float_limit, string_length_limit)
     except AttributeError as e:
         type_name = str(e).split("-")[1]
         raise UnsupportedTypeError(f"Value of unsupported type inside data: {type_name}") from None

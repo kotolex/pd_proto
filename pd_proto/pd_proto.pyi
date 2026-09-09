@@ -18,7 +18,7 @@ def encode_float(number: float) -> bytearray:
     ...
 
 
-def real_encrypt(data: SupportedTypes, proto_version: int, max_depth: int, float_limit: float,
+def pack(data: SupportedTypes, proto_version: int, max_depth: int, float_limit: float,
                  string_length_limit: int) -> bytes:
     """
     Converts a supported Python type into a sequence of bytes. Implemented in Rust
@@ -47,7 +47,7 @@ def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
     ...
 
 
-def real_decrypt(bts: bytes, offset: int, max_depth:int) -> tuple[SupportedTypes, int]:
+def unpack(bts: bytes, offset: int, max_depth:int) -> tuple[SupportedTypes, int]:
     """
     Decodes bytes into an object of one of the supported types. Written in Rust.
     :param bts: bytes representation of some object

@@ -1,7 +1,7 @@
-from pd_proto import real_decrypt
+from pd_proto import unpack
 from pd_proto.const import (PROTOCOL_VERSION, SupportedTypes, DEPTH_LIMIT)
-from pd_proto.errors import (BytesLeftError, EmptyDataError, ProtocolError, DecryptStringError, DataCorruptionError,
-                             WrongTagError, DecryptFloatError, PDProtoError, CycleLinksError)
+from pd_proto.errors import (BytesLeftError, EmptyDataError, ProtocolError, ParseStringError, DataCorruptionError,
+                             WrongTagError, ParseFloatError, PDProtoError, CycleLinksError)
 
 DATA = "[DATA]"
 DEPTH = "[DEPTH]"
@@ -11,7 +11,7 @@ STRING = "[STRING]"
 TAG = "[TAG]"
 
 
-def decrypt(bts: bytes, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
+def loads(bts: bytes, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
     """
     Decodes bytes into an object of one of the supported types
     :param bts: bytes representation of some object
@@ -29,17 +29,17 @@ def decrypt(bts: bytes, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
     if bts[0] != PROTOCOL_VERSION:
         raise ProtocolError(f"Supported protocol version is less or equal {PROTOCOL_VERSION}")
     try:
-        result, offset = real_decrypt(bts, 1, max_depth)
+        result, offset = unpack(bts, 1, max_depth)
     except ValueError as e:
         str_error = str(e)
         if STRING in str_error:
-            raise DecryptStringError(str_error.replace(STRING, "")) from None
+            raise ParseStringError(str_error.replace(STRING, "")) from None
         if END in str_error or DATA in str_error:
             raise DataCorruptionError(str_error.replace(END, "").replace(DATA, "")) from None
         if TAG in str_error:
             raise WrongTagError(str_error.replace(TAG, "")) from None
         if FLOAT in str_error:
-            raise DecryptFloatError(str_error.replace(FLOAT, "")) from None
+            raise ParseFloatError(str_error.replace(FLOAT, "")) from None
         if DEPTH in str_error:
             raise CycleLinksError(str_error.replace(DEPTH, "")) from None
         raise PDProtoError("Unexpected error") from e

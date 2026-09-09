@@ -36,7 +36,7 @@ mod pd_proto {
     }
 
     #[pyfunction]
-    fn real_encrypt(
+    fn pack(
         py: Python<'_>,
         data: Bound<PyAny>,
         protocol_version: u8,
@@ -55,7 +55,7 @@ mod pd_proto {
     }
 
     #[pyfunction]
-    fn real_decrypt(
+    fn unpack(
         py: Python<'_>,
         buffer: Vec<u8>,
         offset: usize,

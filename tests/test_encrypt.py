@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 from unittest import TestCase, main
 
 from pd_proto import encode_float, encode_varint, decode_varint
-from pd_proto.encrypt import encrypt
+from pd_proto.dump import dumps
 from pd_proto.errors import CycleLinksError, UnsupportedTypeError
 
 
-class TestEncodeEncrypt(TestCase):
+class TestEncodedumps(TestCase):
 
     def test_encode_varint(self):
         self.assertEqual(b'\x7f', bytes(encode_varint(127)))
@@ -26,7 +26,7 @@ class TestEncodeEncrypt(TestCase):
         for i in (random.randint(0, 1000000) for _ in range(1000)):
             self.assertEqual(i, decode_varint(bytes(encode_varint(i)), 0)[0])
 
-    def test_encrypt(self):
+    def test_dumps(self):
         params = (
             (b'\x01\x00', None),
             (b'\x01\x01', True),
@@ -86,8 +86,8 @@ class TestEncodeEncrypt(TestCase):
             (b'\x01Z=>?@ABCDEF', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
         )
         for expected, arg in params:
-            with self.subTest(f"encrypt({arg})"):
-                self.assertEqual(expected, encrypt(arg))
+            with self.subTest(f"dumps({arg})"):
+                self.assertEqual(expected, dumps(arg))
 
     def test_encode_float(self):
         self.assertEqual(bytearray(b'\x16\xba\x02'), encode_float(3.14))
@@ -96,13 +96,13 @@ class TestEncodeEncrypt(TestCase):
 
     def test_encrypt_raise_on_unsupported_type(self):
         with self.assertRaises(UnsupportedTypeError):
-            encrypt(self)
+            dumps(self)
 
     def test_encrypt_raise_on_recursion(self):
         a_l = [1, 2]
         a_l.append(a_l)
         with self.assertRaises(CycleLinksError):
-            encrypt(a_l)
+            dumps(a_l)
 
 
 if __name__ == '__main__':

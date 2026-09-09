@@ -3,7 +3,7 @@ from datetime import timedelta, timezone, datetime
 from timeit import timeit
 from zoneinfo import ZoneInfo
 
-from pd_proto import encrypt, decrypt
+from pd_proto import loads, dumps
 
 data = {
     "text": "Тестовая строка UTF-8",
@@ -21,17 +21,17 @@ data = {
     "datetime_offset": datetime(2026, 9, 8, 21, 12, 0, tzinfo=timezone(timedelta(hours=2))),
     "bytes_data": b"\x00\x01\x02\x03"
 }
-py_data = encrypt(data)
+py_data = dumps(data)
 pickle_data = pickle.dumps(data)
 result =  100 - (len(py_data) / (len(pickle_data) / 100))
 print(f"Size difference: {len(py_data) - len(pickle_data)} byte, {result:.2f}% better")
 
 print("ENCRYPT")
-print(timeit("encrypt(data)", "from __main__ import encrypt, data, pickle", number=10000))
-print(timeit("pickle.dumps(data)", "from __main__ import encrypt, data, pickle", number=10000))
+print(timeit("dumps(data)", "from __main__ import dumps, data, pickle", number=10000))
+print(timeit("pickle.dumps(data)", "from __main__ import dumps, data, pickle", number=10000))
 print("DECRYPT")
-print(timeit("decrypt(py_data)", "from __main__ import decrypt, py_data, pickle, pickle_data", number=10000))
-print(timeit("pickle.loads(pickle_data)", "from __main__ import decrypt, py_data, pickle, pickle_data", number=10000))
+print(timeit("loads(py_data)", "from __main__ import loads, py_data, pickle, pickle_data", number=10000))
+print(timeit("pickle.loads(pickle_data)", "from __main__ import loads, py_data, pickle, pickle_data", number=10000))
 
 # At clean Python
 # Size difference: -35 byte, 44.87% better

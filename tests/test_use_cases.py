@@ -1,11 +1,12 @@
+import math
 import pickle
 from datetime import datetime, timezone, timedelta
 from string import ascii_letters, digits
 from unittest import TestCase, main
 from zoneinfo import ZoneInfo, available_timezones
 
-from pd_proto import encrypt
-from pd_proto.decrypt import decrypt
+from pd_proto.load import loads
+from pd_proto.dump import dumps
 
 test_floats = (
     111.408802, 275.074313, 139.61, 676.7, 87.02144, 31.8763, 218.7, 601.99833,
@@ -38,17 +39,17 @@ class TestUseCases(TestCase):
         )
         for param in params:
             with self.subTest(f"test decrypt=encrypt ({param})"):
-                self.assertEqual(decrypt(encrypt(param)), param)
+                self.assertEqual(loads(dumps(param)), param)
 
     def test_floats_more(self):
         for param in test_floats:
             with self.subTest(f"test floats ({param})"):
-                res = encrypt(param)
-                self.assertEqual(decrypt(res), param)
+                res = dumps(param)
+                self.assertEqual(loads(res), param)
 
     def test_diff_with_pickle(self):
         data = [[12569, (1.234, 4.5678), {1: [{1, 2}, {3, 4}]}], None, True, False]
-        py_data = encrypt(data)
+        py_data = dumps(data)
         pickle_data = pickle.dumps(data)
         result = 100 - (len(py_data) / (len(pickle_data) / 100))
         self.assertGreater(result, 30)
@@ -72,52 +73,54 @@ class TestUseCases(TestCase):
             -123.12345,
             -1.765432,
             275.074313,
+            float("inf"),
+            float("-inf"),
         )
         for param in params:
             with self.subTest(f"test opt floats ({param})"):
-                res = encrypt(param)
-                self.assertEqual(decrypt(res), param)
+                res = dumps(param)
+                self.assertEqual(loads(res), param)
 
     def test_strings(self):
         for param in ["a" * i for i in range(1, 16)]:
             with self.subTest(f"test opt strings ({param})"):
-                res = encrypt(param)
-                self.assertEqual(decrypt(res), param)
+                res = dumps(param)
+                self.assertEqual(loads(res), param)
 
     def test_empty_bytes(self):
         value = b''
-        crypted = encrypt(value)
-        back = decrypt(crypted)
+        crypted = dumps(value)
+        back = loads(crypted)
         self.assertEqual(value, back)
 
     def test_bytes(self):
         value = b'\x01\x13\x02\x01\x12'
-        crypted = encrypt(value)
-        back = decrypt(crypted)
+        crypted = dumps(value)
+        back = loads(crypted)
         self.assertEqual(value, back)
 
     def test_bytes_in_list(self):
         value = [b'1', b'', b'2']
-        crypted = encrypt(value)
-        back = decrypt(crypted)
+        crypted = dumps(value)
+        back = loads(crypted)
         self.assertEqual(value, back)
 
     def test_dt_no_tz(self):
         value = datetime.now()
-        crypted = encrypt(value)
-        back = decrypt(crypted)
+        crypted = dumps(value)
+        back = loads(crypted)
         self.assertEqual(value, back)
 
     def test_dt_offset(self):
         value = datetime.now(timezone.utc)
-        crypted = encrypt(value)
-        back = decrypt(crypted)
+        crypted = dumps(value)
+        back = loads(crypted)
         self.assertEqual(value, back)
 
     def test_dt_iana(self):
         value = datetime.now(tz=ZoneInfo("Europe/London"))
-        crypted = encrypt(value)
-        back = decrypt(crypted)
+        crypted = dumps(value)
+        back = loads(crypted)
         self.assertEqual(value, back)
 
     def test_tz_in_list(self):
@@ -125,25 +128,31 @@ class TestUseCases(TestCase):
         value2 = datetime.now(timezone(timedelta(hours=-2)))
         value3 = datetime.now(tz=ZoneInfo("Europe/London"))
         a_list = [value, value2, value3, value, value2, value3]
-        crypted = encrypt(a_list)
-        back = decrypt(crypted)
+        crypted = dumps(a_list)
+        back = loads(crypted)
         self.assertEqual(a_list, back)
 
     def test_all_timezones(self):
         for tz in available_timezones():
             with self.subTest(f"test timezone {tz}"):
                 value = datetime.now(tz=ZoneInfo(tz))
-                crypted = encrypt(value)
-                back = decrypt(crypted)
+                crypted = dumps(value)
+                back = loads(crypted)
                 self.assertEqual(value, back)
 
     def test_all_offsets(self):
         for tz in range(-12, 15):
             with self.subTest(f"test timezone offset {tz}"):
                 value = datetime.now(tz=timezone(timedelta(hours=tz)))
-                crypted = encrypt(value)
-                back = decrypt(crypted)
+                crypted = dumps(value)
+                back = loads(crypted)
                 self.assertEqual(value, back)
+
+    def test_float_nan(self):
+        value = float("nan")
+        crypted = dumps(value)
+        back = loads(crypted)
+        self.assertTrue(math.isnan(back))
 
 
 if __name__ == '__main__':

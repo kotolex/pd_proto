@@ -39,15 +39,15 @@ class WrongTagError(DataCorruptionError):
     """
 
 
-class DecryptFloatError(DataCorruptionError):
+class ParseFloatError(DataCorruptionError):
     """
-    Raises when the data is invalid and float value cannot be decrypted
+    Raises when the data is invalid and float value cannot be parsed
     """
 
 
-class DecryptStringError(DataCorruptionError):
+class ParseStringError(DataCorruptionError):
     """
-    Raises when the data is invalid and string value cannot be decrypted
+    Raises when the data is invalid and string value cannot be parsed
     """
 
 
