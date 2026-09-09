@@ -4,10 +4,11 @@ use crate::pure::dec_places;
 use pyo3::exceptions::{PyAttributeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyAnyMethods, PyDateTime, PyDelta, PyDeltaAccess, PyNone, PySet, PyTzInfoAccess,
+    PyAnyMethods, PyBytes, PyDateTime, PyDelta, PyDeltaAccess, PyNone, PySet, PyString,
+    PyTzInfoAccess,
 };
+use pyo3::types::{PyBool, PyFloat, PyInt, PyList, PyTuple};
 use pyo3::types::{PyDict, PyListMethods};
-use pyo3::types::{PyList, PyTuple};
 
 struct Options {
     max_depth: u32,
@@ -33,6 +34,38 @@ fn e_int(num: i64, buffer: &mut Vec<u8>) {
     if num == 0 {
         buffer.push(Variant::IntZero as u8);
         return;
+    }
+    if num >= 1 && num <= 13 {
+        let tag = INT_INDEX + num as usize; // cause INT_1=61 etc.
+        buffer.push(tag as u8);
+        return;
+    }
+    match num {
+        15 => {
+            buffer.push(Variant::Int15 as u8);
+            return;
+        }
+        20 => {
+            buffer.push(Variant::Int20 as u8);
+            return;
+        }
+        24 => {
+            buffer.push(Variant::Int24 as u8);
+            return;
+        }
+        50 => {
+            buffer.push(Variant::Int50 as u8);
+            return;
+        }
+        100 => {
+            buffer.push(Variant::Int100 as u8);
+            return;
+        }
+        1000 => {
+            buffer.push(Variant::Int1000 as u8);
+            return;
+        }
+        _ => (),
     }
     let tag = if num < 0 {
         Variant::IntNegative
@@ -161,40 +194,43 @@ fn _parse_item(
     if opts.max_depth > 0 && depth > opts.max_depth {
         return Err(PyValueError::new_err("Depth exceeded maximum"));
     }
-    if item.is_instance_of::<pyo3::types::PyBool>() {
+    let py_type = item.get_type();
+    if py_type.is(&py.get_type::<PyBool>()) {
         let val: bool = item.extract()?;
         e_bool(val, buffer);
-    } else if item.is_instance_of::<PyDateTime>() {
+    } else if py_type.is(&py.get_type::<PyDateTime>()) {
         let val = item.cast_into::<PyDateTime>()?;
         e_dt(py, val, buffer)?;
-    } else if item.is_instance_of::<pyo3::types::PyInt>() {
+    } else if py_type.is(&py.get_type::<PyInt>()) {
         let val: i64 = item.extract()?;
         e_int(val, buffer);
-    } else if item.is_instance_of::<pyo3::types::PyFloat>() {
+    } else if py_type.is(&py.get_type::<PyFloat>()) {
         let val: f64 = item.extract()?;
         e_float(val, buffer, opts.float_limit);
-    } else if item.is_instance_of::<PyNone>() {
+    } else if py_type.is(&py.get_type::<PyNone>()) {
         e_none(buffer);
-    } else if item.is_instance_of::<pyo3::types::PyString>() {
+    } else if py_type.is(&py.get_type::<PyString>()) {
         let val: &str = item.extract()?;
         e_string(val, buffer, opts.string_length_limit);
-    } else if item.is_instance_of::<pyo3::types::PyBytes>() {
+    } else if py_type.is(&py.get_type::<PyBytes>()) {
         let val: Vec<u8> = item.extract()?;
         e_bytes(val, buffer);
-    } else if item.is_instance_of::<PyList>() {
+    } else if py_type.is(&py.get_type::<PyList>()) {
         let sub_list: &Bound<'_, PyList> = item.cast::<PyList>().unwrap();
         e_list(py, &sub_list, depth + 1, buffer, opts)?;
-    } else if item.is_instance_of::<PyTuple>() {
+    } else if py_type.is(&py.get_type::<PyTuple>()) {
         let sub_list: &Bound<'_, PyTuple> = item.cast::<PyTuple>().unwrap();
         e_tuple(py, &sub_list, depth + 1, buffer, opts)?;
-    } else if item.is_instance_of::<PySet>() {
+    } else if py_type.is(&py.get_type::<PySet>()) {
         let sub_list: &Bound<'_, PySet> = item.cast::<PySet>().unwrap();
         e_set(py, &sub_list, depth + 1, buffer, opts)?;
-    } else if item.is_instance_of::<PyDict>() {
+    } else if py_type.is(&py.get_type::<PyDict>()) {
         let sub_list: &Bound<'_, PyDict> = item.cast::<PyDict>().unwrap();
         e_dict(py, &sub_list, depth + 1, buffer, opts)?;
     } else {
-        return Err(PyAttributeError::new_err("Unsupported type"));
+        let name = py_type.name()?.to_string();
+        let e_m = format!("Unsupported type-{}", name);
+        return Err(PyAttributeError::new_err(e_m));
     }
     Ok(())
 }
@@ -239,18 +275,27 @@ fn e_set(
 
 fn e_tuple(
     py: Python<'_>,
-    list: &Bound<'_, PyTuple>,
+    a_tuple: &Bound<'_, PyTuple>,
     depth: u32,
     buffer: &mut Vec<u8>,
     opts: &Options,
 ) -> PyResult<()> {
-    if list.len() == 0 {
+    let len = a_tuple.len();
+    if len == 0 {
         buffer.push(Variant::TupleEmpty as u8);
         return Ok(());
     }
-    buffer.push(Variant::Tuple as u8);
-    var_int(list.len() as u64, buffer);
-    for item in list.iter() {
+    match len {
+        2 => buffer.push(Variant::Tuple2 as u8),
+        3 => buffer.push(Variant::Tuple3 as u8),
+        4 => buffer.push(Variant::Tuple4 as u8),
+        5 => buffer.push(Variant::Tuple5 as u8),
+        _ => {
+            buffer.push(Variant::Tuple as u8);
+            var_int(a_tuple.len() as u64, buffer);
+        }
+    }
+    for item in a_tuple.iter() {
         _parse_item(py, item, buffer, depth, opts)?;
     }
     Ok(())
@@ -263,12 +308,18 @@ fn e_list(
     buffer: &mut Vec<u8>,
     opts: &Options,
 ) -> PyResult<()> {
-    if list.len() == 0 {
+    let len = list.len();
+    if len == 0 {
         buffer.push(Variant::ListEmpty as u8);
         return Ok(());
     }
-    buffer.push(Variant::List as u8);
-    var_int(list.len() as u64, buffer);
+    match len {
+        x if x > 0 && x <= 10 => buffer.push((len + LIST_INDEX) as u8),
+        _ => {
+            buffer.push(Variant::List as u8);
+            var_int(len as u64, buffer);
+        }
+    }
     for item in list.iter() {
         _parse_item(py, item, buffer, depth, opts)?;
     }

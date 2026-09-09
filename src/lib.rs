@@ -59,7 +59,8 @@ mod pd_proto {
         py: Python<'_>,
         buffer: Vec<u8>,
         offset: usize,
+        max_depth: i32,
     ) -> PyResult<(Bound<'_, PyAny>, usize)> {
-        r_decrypt_base(py, buffer, offset)
+        r_decrypt_base(py, buffer, offset, max_depth)
     }
 }

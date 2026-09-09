@@ -47,10 +47,12 @@ def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
     ...
 
 
-def real_decrypt(bts: bytes, offset: int) -> tuple[SupportedTypes, int]:
+def real_decrypt(bts: bytes, offset: int, max_depth:int) -> tuple[SupportedTypes, int]:
     """
     Decodes bytes into an object of one of the supported types. Written in Rust.
     :param bts: bytes representation of some object
+    :param max_depth: maximum nesting depth for collections, raise an error if exceeded. Use 0 to disabled it, but it
+    can lead to error
     :param offset: index to read from
     :return: a pair of an object of one of the supported types and offset value
     :raise ValueError: if no data can be decoded, not all bytes was parsed, or data corrupted

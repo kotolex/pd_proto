@@ -1,6 +1,6 @@
 from pd_proto import real_encrypt
 from pd_proto.const import (PROTOCOL_VERSION, SupportedTypes, FLOAT_LIMIT, STRING_LIMIT, DEPTH_LIMIT)
-from pd_proto.errors import CycleLinksError, UnsupportedTypeError
+from pd_proto.errors import CycleLinksError, UnsupportedTypeError, PDProtoError
 
 
 def encrypt(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: float = FLOAT_LIMIT,
@@ -20,8 +20,11 @@ def encrypt(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: flo
     """
     try:
         result = real_encrypt(data, PROTOCOL_VERSION, max_depth, float_limit, string_length_limit)
-    except AttributeError:
-        raise UnsupportedTypeError("Value of unsupported type inside data") from None
+    except AttributeError as e:
+        type_name = str(e).split("-")[1]
+        raise UnsupportedTypeError(f"Value of unsupported type inside data: {type_name}") from None
     except ValueError:
         raise CycleLinksError("Cannot encrypt collections with link cycle") from None
+    except Exception as e:
+        raise PDProtoError("Unexpected error on encrypting data! Please check your data is correct and report an issue here") from e # TODO git rep
     return result

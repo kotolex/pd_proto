@@ -12,7 +12,7 @@ SupportedCollections = list | tuple | dict | set
 
 class Variant(IntEnum):
     """
-    Supported types and their codes in the resulting encoding
+    Supported types and their codes(tags) in the resulting data
     """
     NULL = 0
     BOOL_TRUE = 1
@@ -67,3 +67,36 @@ class Variant(IntEnum):
     STRING_13 = 53
     STRING_14 = 54
     STRING_15 = 55
+    TUPLE_2 = 56
+    TUPLE_3 = 57
+    TUPLE_4 = 58
+    TUPLE_5 = 59
+    INT_1000 = 60
+    INT_1 = 61
+    INT_2 = 62
+    INT_3 = 63
+    INT_4 = 64
+    INT_5 = 65
+    INT_6 = 66
+    INT_7 = 67
+    INT_8 = 68
+    INT_9 = 69
+    INT_10 = 70
+    INT_11 = 71
+    INT_12 = 72
+    INT_13 = 73
+    INT_15 = 74
+    INT_20 = 75
+    INT_24 = 76
+    INT_50 = 77
+    INT_100 = 78 # <- 79, 80
+    LIST_1 = 81
+    LIST_2 = 82
+    LIST_3 = 83
+    LIST_4 = 84
+    LIST_5 = 85
+    LIST_6 = 86
+    LIST_7 = 87
+    LIST_8 = 88
+    LIST_9 = 89
+    LIST_10 = 90

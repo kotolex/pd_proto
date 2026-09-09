@@ -5,11 +5,9 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 ## _We fight for each byte!_
 
 ### ToDo
- - lists and tuples of small length
  - optimize decryption
  - depth for decypyt
  - rust docs
- - int 1
 
 
 
@@ -22,3 +20,5 @@ PeaceData Protocol or just PDProto is a binary protocol for representing basic d
 - faster than json for all OS (2-4 times faster)
 - no dependencies
 - can use nan, inf, -inf for float, can use datetimes (json cant)
+
+no frosensets, no inherit classes
