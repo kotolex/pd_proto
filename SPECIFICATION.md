@@ -1,6 +1,6 @@
 # Peace Data Protocol Specification. Version 1
 
-**Peace Data Protocol (PDProto)** is a binary serialization protocol designed for all major native Python types. Engineered with a primary focus on execution speed and minimal footprint, it guarantees the following core principles:
+**Peace Data Protocol (PDProto)** is a binary serialization protocol designed for all standard built-in Python types. Engineered with a primary focus on execution speed and minimal footprint, it guarantees the following core principles:
 
 1. **Reliability:** If the serialized payload remains pristine and unmodified, the object is guaranteed to deserialize without errors. Furthermore, the unpacked object will satisfy strict equality (==) with the original Python object.
 2. **Backward Compatibility:** Any newer version of the protocol decoder is guaranteed to successfully deserialize payloads packed by older versions.
@@ -14,7 +14,7 @@
 
 Every serialized payload starts with a **1-byte protocol version header**. If the incoming payload version exceeds the maximum version supported by the decoder, the parser must abort immediately and raise a human-readable error. No deserialization attempts should be made under these conditions.
 
-The protocol enforces **packed binary alignment (no padding)** and utilizes **Big-Endian** byte ordering exclusively for encoding standard float primitives.
+The protocol enforces **packed binary alignment (no padding)** and uses **Big-Endian** byte ordering exclusively for encoding standard float primitives.
 
 Data fields are laid out sequentially, directly following the version byte. Each data element begins with a **Type Tag** that defines its type, and optionally encodes its value or length.
 
@@ -57,7 +57,7 @@ Non-empty collections (such as tuple) encode the total **element count** (not th
 
 ### Optimized Inline Tags
 
-"Optimizing" tags are dedicated markers that inherently imply the exact layout or dimension of a structure, eliminating the need to write separate size descriptors. For instance, the TUPLE_2 tag [56] pre-defines a tuple containing exactly 2 elements; the parser expects the elements immediately after the tag without parsing a length descriptor.
+"Optimizing" tags are dedicated markers that inherently imply the exact layout or dimension of a structure, eliminating the need to write separate size descriptors. For instance, the TUPLE_2 tag [56] pre-defines a tuple containing exactly two elements; the parser expects the elements immediately after the tag without parsing a length descriptor.
 
 *Example: Complete byte representation of an optimized tuple (None, None) in Protocol Version 1:* [1, 56, 0, 0]
 
@@ -168,19 +168,21 @@ Note: An asterisk * indicates a variable size dependent on the payload (e.g., st
 
 Unlike Python's arbitrary-precision integers, primitives within this protocol are bounded by Rust's i64::MAX value (9_223_372_036_854_775_807). 
 Negative integers are converted to positive numbers by stripping the minus sign and are prefixed with a dedicated tag 11, inheriting the same threshold. 
-Integers are serialized via the Varint algorithm described above; the storage delta becomes apparent for values greater than 127. 
+Integers are serialized via the Varint algorithm described above; the storage delta becomes clear for values greater than 127. 
 
-Highly recurrent integer constants (0, 1-13, 15, 20, 24, 50, 100, 1000) bypass Varint processing and map directly to dedicated standalone tags.
+Highly recurrent integer constants (0, 1–13, 15, 20, 24, 50, 100, 1000) bypass Varint processing and map directly to dedicated standalone tags.
 
 ### Float
 
 Standard float primitives are serialized as an 8-byte Big-Endian sequence, excluding 0.0 and optimized decimal structures. 
-Special IEEE 754 values such as Inf, -Inf, and NaN are fully supported. Float optimization scales down the 8-byte overhead based on decimal precision, targeting values with up to 6 decimal places. 
+Special IEEE 754 values such as Inf, -Inf, and NaN are fully supported. 
+
+Float optimization scales down the 8-byte overhead based on decimal precision, targeting values with up to 6 decimal places. 
 The optimization routine evaluates the following logic:
  - The value must map cleanly to an optimization-eligible precision tier (1 to 6 decimal places).
  - The value at n decimal places must reside below an upper bound threshold, defined as 268_435_455.0 divided by 10^n.
  - The float is multiplied by 10^n to truncate decimal components, converting it into a standard integer.
- - The encoder writes the corresponding tag (e.g., FLOAT_6 26) followed by the derived integer payload via Varint.
+ - The encoder writes the corresponding tag (e.g., FLOAT_6 [26]) followed by the derived integer payload via Varint.
 
 During deserialization, the operation is reversed: the parser infers the scaling exponent n from the tag, reads the Varint integer, and divides it by 10^n to recreate the precise float primitive. 
 
@@ -188,7 +190,8 @@ If the optimization path yields a size greater than or equal to 6 bytes, the enc
 
 ### String
 
-Strings are strictly bound to UTF-8 or compatible ASCII byte streams. If a string utilizes alternative character encodings or encounters an invalid byte sequence during parsing, the decoder will terminate and return an error. Arbitrary data matrices or non-UTF-8 encodings must be explicitly cast to the bytes type.
+Strings are strictly bound to UTF-8 or compatible ASCII byte streams. If a string uses alternative character encodings or encounters an invalid byte sequence during parsing, the decoder will terminate and return an error. 
+Arbitrary data matrices or non-UTF-8 encodings must be explicitly cast to the bytes type.
 
 When exceeding a designated length threshold, a string is compressed using the DEFLATE algorithm under tag 40. If the compressed block footprint matches or exceeds the original raw sequence length, the encoder automatically falls back to uncompressed tag 13. 
 Compressed strings are structured as: Tag + Varint(Byte Length) + Compressed Data.
