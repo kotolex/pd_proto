@@ -1,6 +1,5 @@
-use crate::arc::compress;
 use crate::constants::*;
-use crate::pure::dec_places;
+use crate::utils::{Options, compress, dec_places};
 use pyo3::exceptions::{PyAttributeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{
@@ -9,12 +8,6 @@ use pyo3::types::{
 };
 use pyo3::types::{PyBool, PyFloat, PyInt, PyList, PyTuple};
 use pyo3::types::{PyDict, PyListMethods};
-
-struct Options {
-    max_depth: u32,
-    string_length_limit: usize,
-    float_limit: f64,
-}
 
 pub fn var_int(mut number: u64, buffer: &mut Vec<u8>) {
     let mut buf = [0u8; 10];
@@ -31,7 +24,7 @@ pub fn var_int(mut number: u64, buffer: &mut Vec<u8>) {
     buffer.extend_from_slice(&buf[..idx]);
 }
 
-fn e_int(num: i64, buffer: &mut Vec<u8>) {
+fn e_int(num: i64, buffer: &mut Vec<u8>, opts: &mut Options) {
     if num == 0 {
         buffer.push(Variant::IntZero as u8);
         return;
@@ -68,6 +61,14 @@ fn e_int(num: i64, buffer: &mut Vec<u8>) {
         }
         _ => (),
     }
+    match opts.get_int_index(num) {
+        Some(index) => {
+            buffer.push(Variant::CacheInt as u8);
+            buffer.push(index);
+            return;
+        }
+        None => {opts.add_int(num);}
+    }
     let tag = if num < 0 {
         Variant::IntNegative
     } else {
@@ -90,13 +91,21 @@ fn e_bool(value: bool, buffer: &mut Vec<u8>) {
     }
 }
 
-pub fn e_float(number: f64, buffer: &mut Vec<u8>, float_limit: f64) {
+pub fn e_float(number: f64, buffer: &mut Vec<u8>, opts: &mut Options) {
     if number == 0.0 {
         buffer.push(Variant::FloatZero as u8);
         return;
     }
+    match opts.get_float_index(number) {
+        Some(index) => {
+            buffer.push(Variant::CacheFloat as u8);
+            buffer.push(index);
+            return;
+        }
+        None => {opts.add_float(number)}
+    }
     let r_number = if number < 0.0 { -number } else { number };
-    if float_limit > 0.0 && r_number <= float_limit {
+    if opts.float_limit > 0.0 && r_number <= opts.float_limit {
         let dec_places = dec_places(r_number);
         if dec_places < 7 {
             let tag = tag_by_decimal_places(dec_places, number < 0.0);
@@ -106,7 +115,7 @@ pub fn e_float(number: f64, buffer: &mut Vec<u8>, float_limit: f64) {
                 return;
             }
             let pow = TEN.pow(dec_places as u32) as f64;
-            let limit = float_limit / pow;
+            let limit = opts.float_limit / pow;
             if r_number < limit {
                 let int_value = (r_number * pow).round() as u64;
                 buffer.push(tag);
@@ -119,15 +128,15 @@ pub fn e_float(number: f64, buffer: &mut Vec<u8>, float_limit: f64) {
     buffer.extend_from_slice(&number.to_be_bytes());
 }
 
-fn e_dt(py: Python<'_>, item: Bound<PyDateTime>, buffer: &mut Vec<u8>) -> PyResult<()> {
+fn e_dt(py: Python<'_>, item: Bound<PyDateTime>, buffer: &mut Vec<u8>, opts: &mut Options) -> PyResult<()> {
     let timestamp: f64 = item.call_method0("timestamp")?.extract()?;
     match item.get_tzinfo() {
         Some(tz_info) => match tz_info.getattr("key") {
             Ok(key) => {
                 let key_str = key.to_string();
                 buffer.push(Variant::DateTimeIana as u8);
-                e_float(timestamp, buffer, FLOAT_DEFAULT_LIMIT);
-                e_string(&key_str, buffer, 100);
+                e_float(timestamp, buffer, opts);
+                e_string(&key_str, buffer, opts);
             }
             Err(_) => {
                 let delta: Bound<PyDelta> = tz_info
@@ -136,32 +145,40 @@ fn e_dt(py: Python<'_>, item: Bound<PyDateTime>, buffer: &mut Vec<u8>) -> PyResu
                     .extract()?;
                 let dt_offset: i32 = delta.get_seconds();
                 buffer.push(Variant::DateTimeOffset as u8);
-                e_float(timestamp, buffer, FLOAT_DEFAULT_LIMIT);
-                e_int(dt_offset as i64, buffer);
+                e_float(timestamp, buffer, opts);
+                e_int(dt_offset as i64, buffer, opts);
             }
         },
         None => {
             buffer.push(Variant::DateTimeNoTz as u8);
-            e_float(timestamp, buffer, FLOAT_DEFAULT_LIMIT);
+            e_float(timestamp, buffer, opts);
         }
     }
     Ok(())
 }
 
-fn e_string(value: &str, buffer: &mut Vec<u8>, string_limit: usize) {
+fn e_string(value: &str, buffer: &mut Vec<u8>, opts: &mut Options) {
     if value.is_empty() {
         buffer.push(Variant::StringEmpty as u8);
         return;
     }
     let encoded = value.as_bytes();
     let bytes_len = encoded.len();
+    match opts.get_string_index(encoded) { 
+        Some(index) => {
+            buffer.push(Variant::CacheString as u8);
+            buffer.push(index);
+            return;
+        }
+        None => {opts.add_string(encoded)}
+    }
     if bytes_len <= 15 {
         let tag = STRING_INDEX + bytes_len; // cause STRING_1=31 etc.
         buffer.push(tag as u8);
         buffer.extend(encoded);
         return;
     }
-    if string_limit > 0 && bytes_len > string_limit {
+    if opts.string_length_limit > 0 && bytes_len > opts.string_length_limit {
         let compressed = compress(encoded).unwrap();
         if compressed.len() < bytes_len + 3 {
             buffer.push(Variant::StringCompressed as u8);
@@ -190,7 +207,7 @@ fn _parse_item(
     item: Bound<PyAny>,
     buffer: &mut Vec<u8>,
     depth: u32,
-    opts: &Options,
+    opts: &mut Options,
 ) -> PyResult<()> {
     if opts.max_depth > 0 && depth > opts.max_depth {
         return Err(PyValueError::new_err("Depth exceeded maximum"));
@@ -201,18 +218,18 @@ fn _parse_item(
         e_bool(val, buffer);
     } else if py_type.is(&py.get_type::<PyDateTime>()) {
         let val = item.cast_into::<PyDateTime>()?;
-        e_dt(py, val, buffer)?;
+        e_dt(py, val, buffer, opts)?;
     } else if py_type.is(&py.get_type::<PyInt>()) {
         let val: i64 = item.extract()?;
-        e_int(val, buffer);
+        e_int(val, buffer, opts);
     } else if py_type.is(&py.get_type::<PyFloat>()) {
         let val: f64 = item.extract()?;
-        e_float(val, buffer, opts.float_limit);
+        e_float(val, buffer, opts);
     } else if py_type.is(&py.get_type::<PyNone>()) {
         e_none(buffer);
     } else if py_type.is(&py.get_type::<PyString>()) {
         let val: &str = item.extract()?;
-        e_string(val, buffer, opts.string_length_limit);
+        e_string(val, buffer, opts);
     } else if py_type.is(&py.get_type::<PyBytes>()) {
         let val: Vec<u8> = item.extract()?;
         e_bytes(val, buffer);
@@ -241,7 +258,7 @@ fn e_dict(
     list: &Bound<'_, PyDict>,
     depth: u32,
     buffer: &mut Vec<u8>,
-    opts: &Options,
+    opts: &mut Options
 ) -> PyResult<()> {
     if list.len() == 0 {
         buffer.push(Variant::DictEmpty as u8);
@@ -260,7 +277,7 @@ fn e_set(
     list: &Bound<'_, PySet>,
     depth: u32,
     buffer: &mut Vec<u8>,
-    opts: &Options,
+    opts: &mut Options
 ) -> PyResult<()> {
     if list.len() == 0 {
         buffer.push(Variant::SetEmpty as u8);
@@ -279,7 +296,7 @@ fn e_tuple(
     a_tuple: &Bound<'_, PyTuple>,
     depth: u32,
     buffer: &mut Vec<u8>,
-    opts: &Options,
+    opts: &mut Options
 ) -> PyResult<()> {
     let len = a_tuple.len();
     if len == 0 {
@@ -307,7 +324,7 @@ fn e_list(
     list: &Bound<'_, PyList>,
     depth: u32,
     buffer: &mut Vec<u8>,
-    opts: &Options,
+    opts: &mut Options
 ) -> PyResult<()> {
     let len = list.len();
     if len == 0 {
@@ -344,12 +361,8 @@ pub fn enc(
     } else {
         string_length_limit as usize
     };
-    let opts = Options {
-        max_depth: real_depth,
-        string_length_limit: real_string,
-        float_limit: real_float,
-    };
-    _parse_item(py, data, &mut buffer, 1, &opts)?;
+    let mut opts = Options::new(real_depth, real_string, real_float);
+    _parse_item(py, data, &mut buffer, 1, &mut opts)?;
     Ok(buffer)
 }
 

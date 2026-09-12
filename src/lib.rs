@@ -1,8 +1,7 @@
-mod arc;
 mod constants;
 mod dec;
 mod enc;
-mod pure;
+mod utils;
 
 use pyo3::prelude::*;
 
@@ -11,7 +10,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc; // should speed up alloc
 
 #[pymodule]
 mod pd_proto {
-    use crate::constants::FLOAT_DEFAULT_LIMIT;
+    use crate::utils::Options;
     use crate::dec::*;
     use crate::enc::*;
     use pyo3::prelude::*;
@@ -31,7 +30,8 @@ mod pd_proto {
     #[pyfunction]
     fn encode_float(value: f64) -> Vec<u8> {
         let mut v = Vec::new();
-        e_float(value, &mut v, FLOAT_DEFAULT_LIMIT);
+        let mut opts = Options::new_default();
+        e_float(value, &mut v, &mut opts);
         v
     }
 

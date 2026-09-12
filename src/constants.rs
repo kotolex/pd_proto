@@ -8,6 +8,9 @@ pub const INT_INDEX: usize = 60; // cause optimized ints starts with 61
 pub const LIST_INDEX: usize = 80; // cause optimized lists starts with 81
 pub const FLOAT_DEFAULT_LIMIT: f64 = 268_435_455.0;
 pub const TEN: u64 = 10;
+pub const DEFAULT_CACHE_CAPACITY: usize = 20;
+pub const DEFAULT_CACHE_STRING_LIMIT: usize = 250;
+pub const DEFAULT_INT_LIMIT: i64 = 16384;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -49,6 +52,9 @@ pub enum Variant {
     Float4Neg = 34,
     Float5Neg = 35,
     Float6Neg = 36,
+    CacheString = 37,
+    CacheFloat = 38,
+    CacheInt = 39,
     StringCompressed = 40,
     String1 = 41,
     String2 = 42,
@@ -155,6 +161,9 @@ impl TryFrom<u8> for Variant {
             34 => Ok(Variant::Float4Neg),
             35 => Ok(Variant::Float5Neg),
             36 => Ok(Variant::Float6Neg),
+            37 => Ok(Variant::CacheString),
+            38 => Ok(Variant::CacheFloat),
+            39 => Ok(Variant::CacheInt),
             40 => Ok(Variant::StringCompressed),
             41 => Ok(Variant::String1),
             42 => Ok(Variant::String2),
