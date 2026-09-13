@@ -39,6 +39,48 @@ The protocol strictly and natively processes the following built-in types:
 
 *Note: User-defined subclasses or structures containing application-specific logic must be sanitized and converted into a standard native schema (such as a dictionary or tuple) prior to serialization.*
 
+## Usage
+
+Just like with pickle and json, use dumps to serialize data and loads to deserialize it.
+
+```python
+from pd_proto import dumps, loads
+
+data = {"text": "some text", "is_valid": True, "unique_tags": {"apple", "banana", "cherry"}}
+bts = dumps(data)
+print(bts)  # b'\x01\x11\x03,text1some text0is_valid\x013unique_tags\x10\x03.banana-apple.cherry'
+parsed = loads(bts)
+print(parsed)  # {'text': 'some text', 'is_valid': True, 'unique_tags': {'banana', 'apple', 'cherry'}}
+assert data == parsed  # The protocol guarantees equality after deserialization
+```
+
+You can use any supported (built-in) types and collections composed of supported types. If an unsupported type is encountered in the data, you will receive a clear error message about it.
+
+### Parameters
+
+You can configure certain serialization parameters to boost speed at the cost of the resulting byte array size. Since optimal defaults are already selected, tweaking these settings is generally not recommended.
+
+**max_depth** - Specifies the maximum allowed nesting depth for collections, throwing an exception if exceeded. Defaults to 1000. Setting it to a negative value or 0 disables the depth check, which may lead to stack overflow and application crashes.
+
+**float_limit** - Specifies the threshold for float optimization. For details on how this optimization works, refer to the protocol specification. Defaults to 268_435_455.0. If set to a negative value or 0, no attempts will be made to optimize float sizes. This may boost performance but expands the result size since every float takes up 8 bytes.
+
+**string_length_limit** - Specifies the string size threshold for compression. Strings larger than this value (in bytes) will be compressed. Defaults to 100 bytes. If set to a negative value or 0, no strings will be compressed—for instance, if you know the data is already incompressible.
+
+### Errors
+
+Every error has a clear, self-explanatory name and includes a message describing the issue. If you are unsure which specific exception might be raised, you can catch the base exception for all protocol errors(PDProtoError).
+
+```python
+from pd_proto import dumps, PDProtoError
+
+data = frozenset([1, 2])
+try:
+    bts = dumps(data)
+except PDProtoError:
+    print("Cant use it")  # frozenset is not supported!
+```
+**Note on frozenset:** Despite being a built-in type, `frozenset` is seldom used and is identical to a standard `set` from a data perspective (ignoring behavior). If you need to serialize it, just use a regular `set`.
+
 ## Comparison with JSON
 
 The primary benefit of JSON over `pd_proto` is human-readability. Otherwise, JSON produces larger payloads and performs slower.

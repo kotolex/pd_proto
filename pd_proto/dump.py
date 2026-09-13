@@ -27,6 +27,8 @@ def dumps(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: float
         raise CycleLinksError("Cannot encrypt collections with link cycle") from None
     except OverflowError:
         raise IntegerOutOfBoundsError(f"Data contains integers which is not in range [{MIN_INT}; {MAX_INT}]") from None
-    except Exception as e:
+    except BaseException as e: # Rust panic error will be caught here
+        if isinstance(e, (KeyboardInterrupt, SystemExit)):
+            raise
         raise PDProtoError("Unexpected error on encrypting data! Please check your data is correct and report an issue here") from e # TODO git rep
     return result
