@@ -3,6 +3,7 @@ from pd_proto.const import (PROTOCOL_VERSION, SupportedTypes, DEPTH_LIMIT)
 from pd_proto.errors import (BytesLeftError, EmptyDataError, ProtocolError, ParseStringError, DataCorruptionError,
                              WrongTagError, ParseFloatError, PDProtoError, CycleLinksError)
 
+BYTES = "[BYTES]"
 CACHE = "[CACHE]"
 DATA = "[DATA]"
 DEPTH = "[DEPTH]"
@@ -10,6 +11,16 @@ END = "[END]"
 FLOAT = "[FLOAT]"
 STRING = "[STRING]"
 TAG = "[TAG]"
+ERROR_MAPPING = {
+    BYTES: DataCorruptionError,
+    END: DataCorruptionError,
+    DATA: DataCorruptionError,
+    CACHE: DataCorruptionError,
+    TAG: WrongTagError,
+    FLOAT: ParseFloatError,
+    STRING: ParseStringError,
+    DEPTH: CycleLinksError
+}
 
 
 def loads(bts: bytes, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
@@ -27,22 +38,15 @@ def loads(bts: bytes, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
     """
     if len(bts) <= 1:
         raise EmptyDataError("Nothing to decrypt")
-    if bts[0] != PROTOCOL_VERSION:
+    if bts[0] > PROTOCOL_VERSION:
         raise ProtocolError(f"Supported protocol version is less or equal {PROTOCOL_VERSION}")
     try:
         result, offset = unpack(bts, 1, max_depth)
     except ValueError as e:
         str_error = str(e)
-        if STRING in str_error:
-            raise ParseStringError(str_error) from None
-        if END in str_error or DATA in str_error or CACHE in str_error:
-            raise DataCorruptionError(str_error) from None
-        if TAG in str_error:
-            raise WrongTagError(str_error) from None
-        if FLOAT in str_error:
-            raise ParseFloatError(str_error) from None
-        if DEPTH in str_error:
-            raise CycleLinksError(str_error) from None
+        for key, error in ERROR_MAPPING.items():
+            if str_error.startswith(key):
+                raise error(str_error) from None
         raise PDProtoError(f"Rust backend fail: {str_error}") from e
     diff = len(bts) - offset - 1
     if diff > 0:

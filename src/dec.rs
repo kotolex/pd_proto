@@ -112,9 +112,10 @@ pub fn decode_varint(bts: &Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
 fn decode_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
     if buffer.len() < offset + FLOAT_BYTES {
         let e_m = format!(
-            "[FLOAT] Not enough bytes, need {}, but have only {} bytes left",
+            "[FLOAT] Not enough bytes, need {}, but have only {} bytes left at offset {}",
             FLOAT_BYTES,
-            buffer.len() - offset
+            buffer.len() - offset,
+            offset
         );
         return Err(PyValueError::new_err(e_m));
     }
@@ -166,9 +167,10 @@ fn decode_string(buffer: &Vec<u8>, offset: usize, tag: Variant) -> PyResult<(Str
         last_index = read + (value as usize) + offset;
         if buffer.len() < last_index - 1 {
             let e_m = format!(
-                "[STRING] Not enough bytes, need {}, but have only {} bytes left",
+                "[STRING] Not enough bytes, need {}, but have only {} bytes left at offset {}",
                 value,
-                buffer.len() - offset
+                buffer.len() - offset,
+                offset
             );
             return Err(PyValueError::new_err(e_m));
         }
@@ -278,6 +280,16 @@ fn decode_dict(
 fn decode_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
     let (size, read) = decode_varint(buffer, offset)?;
     let new_offset = offset + read;
+    let last_index = new_offset + size as usize;
+    if buffer.len() < last_index {
+        let e_m = format!(
+            "[BYTES] Not enough bytes, need {}, but have only {} bytes left at offset {}",
+            last_index -offset,
+            buffer.len() - offset,
+            offset
+        );
+        return Err(PyValueError::new_err(e_m));
+    }
     let data = buffer[new_offset..new_offset + size as usize].to_vec();
     Ok((data, new_offset + size as usize))
 }

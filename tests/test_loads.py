@@ -126,9 +126,13 @@ class TestLoads(TestCase):
         with self.assertRaises(DataCorruptionError):
             loads(b'\x01\x11\x02==>')
 
-    # def test_loads_fail_not_enough_bytes(self):
-    #     with self.assertRaises(ValueError):
-    #         loads(b'\x01\x13\x051234')
+    def test_loads_fail_not_enough_bytes(self):
+        with self.assertRaises(DataCorruptionError):
+            loads(b'\x01\x13\x051234')
+
+    def test_loads_fail_no_elements_for_list(self):
+        with self.assertRaises(DataCorruptionError):
+            loads(b'\x01S\x13')
 
 
 if __name__ == '__main__':
