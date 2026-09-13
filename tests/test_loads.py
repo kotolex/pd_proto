@@ -114,6 +114,14 @@ class TestLoads(TestCase):
         with self.assertRaises(DataCorruptionError):
             loads(b'\x01\n' + b'\x80'*20)
 
+    def test_loads_fail_no_cache_index(self):
+        with self.assertRaises(DataCorruptionError):
+            loads(b"\x01R\n\xf0\xab\x01'")
+
+    def test_loads_fail_nothing_in_cache(self):
+        with self.assertRaises(DataCorruptionError):
+            loads(b"\x01R\n\xf0\xab\x01'\x05")
+
 
 if __name__ == '__main__':
     main()

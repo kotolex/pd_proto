@@ -28,6 +28,7 @@ jobs:
           . "$HOME/.cargo/env"
           export PATH="$HOME/.cargo/bin:$PATH"
           pip install pylint maturin
+          cargo check
           cargo test --verbose
           python3 -m pylint --rcfile pylint.toml .
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH

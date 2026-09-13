@@ -3,6 +3,7 @@ from pd_proto.const import (PROTOCOL_VERSION, SupportedTypes, DEPTH_LIMIT)
 from pd_proto.errors import (BytesLeftError, EmptyDataError, ProtocolError, ParseStringError, DataCorruptionError,
                              WrongTagError, ParseFloatError, PDProtoError, CycleLinksError)
 
+CACHE = "[CACHE]"
 DATA = "[DATA]"
 DEPTH = "[DEPTH]"
 END = "[END]"
@@ -33,16 +34,16 @@ def loads(bts: bytes, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
     except ValueError as e:
         str_error = str(e)
         if STRING in str_error:
-            raise ParseStringError(str_error.replace(STRING, "")) from None
-        if END in str_error or DATA in str_error:
-            raise DataCorruptionError(str_error.replace(END, "").replace(DATA, "")) from None
+            raise ParseStringError(str_error) from None
+        if END in str_error or DATA in str_error or CACHE in str_error:
+            raise DataCorruptionError(str_error) from None
         if TAG in str_error:
-            raise WrongTagError(str_error.replace(TAG, "")) from None
+            raise WrongTagError(str_error) from None
         if FLOAT in str_error:
-            raise ParseFloatError(str_error.replace(FLOAT, "")) from None
+            raise ParseFloatError(str_error) from None
         if DEPTH in str_error:
-            raise CycleLinksError(str_error.replace(DEPTH, "")) from None
-        raise PDProtoError("Unexpected error") from e
+            raise CycleLinksError(str_error) from None
+        raise PDProtoError(f"Rust backend fail: {str_error}") from e
     diff = len(bts) - offset - 1
     if diff > 0:
         raise BytesLeftError(f"Corrupt data, finish on parse bytes {offset}, but still have {diff} bytes unparsed")

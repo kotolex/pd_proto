@@ -1,5 +1,6 @@
-use crate::constants::{INT_INDEX, LIST_INDEX, TEN, Variant};
-use crate::utils::{DecodeOptions, decompress};
+use crate::constants::{INT_INDEX, LIST_INDEX, TEN, VARINT_SAFETY_LIMIT, Variant};
+use crate::options::DecodeOptions;
+use crate::utils::decompress;
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
@@ -81,12 +82,11 @@ impl<'py> IntoPyObject<'py> for ParsedData {
     }
 }
 
-pub fn d_varint(bts: &Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
+pub fn decode_varint(bts: &Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
     let mut number: u64 = 0;
     let mut shift = 0;
     let mut bytes_read = 0;
-    let safety_limit = 16;
-
+    let safety_limit = VARINT_SAFETY_LIMIT;
     for &byte in &bts[offset..] {
         bytes_read += 1;
         number |= ((byte & 0x7F) as u64) << shift;
@@ -94,7 +94,6 @@ pub fn d_varint(bts: &Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
             break;
         }
         shift += 7;
-
         if bytes_read >= safety_limit {
             let error_message = format!(
                 "[END] Int is too long or data corrupted, offset: {}",
@@ -110,7 +109,7 @@ pub fn d_varint(bts: &Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
     Ok((number, bytes_read))
 }
 
-fn d_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
+fn decode_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
     if buffer.len() < offset + FLOAT_BYTES {
         let e_m = format!(
             "[FLOAT] Not enough bytes, need {}, but have only {} bytes left",
@@ -119,51 +118,51 @@ fn d_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
         );
         return Err(PyValueError::new_err(e_m));
     }
-    match buffer[offset..offset + 8].try_into() {
+    match buffer[offset..offset + FLOAT_BYTES].try_into() {
         Ok(x) => Ok((f64::from_be_bytes(x), FLOAT_BYTES)),
         Err(_) => Err(PyValueError::new_err("[FLOAT] Wrong data for float")),
     }
 }
 
-fn d_optimized_float(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(f64, usize)> {
-    let (value, read) = d_varint(buffer, offset)?;
-    if tag == Variant::FloatNoDecimals as u8 {
+fn decode_optimized_float(buffer: &Vec<u8>, offset: usize, tag: Variant) -> PyResult<(f64, usize)> {
+    let (value, read) = decode_varint(buffer, offset)?;
+    if tag == Variant::FloatNoDecimals {
         return Ok((value as f64, read));
-    } else if tag == Variant::FloatNoDecimalsNeg as u8 {
+    } else if tag == Variant::FloatNoDecimalsNeg {
         return Ok((-(value as f64), read));
     }
-    if tag > Variant::FloatNoDecimals as u8 && tag <= Variant::Float6 as u8 {
-        let dec_places = tag - 20; // cause FLOAT_1 = 21, FLOAT_2=22 etc.
+    if tag > Variant::FloatNoDecimals && tag <= Variant::Float6 {
+        let dec_places = tag as u8 - 20; // cause FLOAT_1 = 21, FLOAT_2=22 etc.
         let pow = TEN.pow(dec_places as u32) as f64;
         let result = value as f64 / pow;
         Ok((result, read))
     } else {
-        let dec_places = tag - 30; // cause FLOAT_1_NEG = 31, FLOAT_2_NEG=32 etc.
+        let dec_places = tag as u8 - 30; // cause FLOAT_1_NEG = 31, FLOAT_2_NEG=32 etc.
         let pow = TEN.pow(dec_places as u32) as f64;
         let result = value as f64 / pow;
         Ok((-result, read))
     }
 }
 
-fn d_optimized_int(tag: u8) -> i64 {
-    if tag <= Variant::Int13 as u8 && tag >= Variant::Int1 as u8 {
+fn decode_optimized_int(tag: Variant) -> i64 {
+    if tag <= Variant::Int13 && tag >= Variant::Int1 {
         return tag as i64 - INT_INDEX as i64;
     }
     match tag {
-        74 => 15,
-        75 => 20,
-        76 => 24,
-        77 => 50,
-        78 => 100,
+        Variant::Int15 => 15,
+        Variant::Int20 => 20,
+        Variant::Int24 => 24,
+        Variant::Int50 => 50,
+        Variant::Int100 => 100,
         _ => 1000,
     }
 }
 
-fn d_string(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(String, usize)> {
+fn decode_string(buffer: &Vec<u8>, offset: usize, tag: Variant) -> PyResult<(String, usize)> {
     let last_index;
     let mut new_offset = offset;
-    let (value, read) = d_varint(buffer, offset)?;
-    if tag == Variant::String as u8 || tag == Variant::StringCompressed as u8 {
+    let (value, read) = decode_varint(buffer, offset)?;
+    if tag == Variant::String || tag == Variant::StringCompressed {
         last_index = read + (value as usize) + offset;
         if buffer.len() < last_index - 1 {
             let e_m = format!(
@@ -175,7 +174,7 @@ fn d_string(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(String, usize
         }
         new_offset = offset + read;
     } else {
-        last_index = (tag - 40) as usize + offset; // cause STRING_1=41 etc.
+        last_index = (tag as u8 - 40) as usize + offset; // cause STRING_1=41 etc.
         if buffer.len() < last_index {
             let e_m = format!(
                 "[STRING] Not enough bytes, need {}, but have only {} bytes left",
@@ -186,7 +185,7 @@ fn d_string(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(String, usize
         }
     }
     let sub = &buffer[new_offset..last_index];
-    let text = if tag == Variant::StringCompressed as u8 {
+    let text = if tag == Variant::StringCompressed {
         decompress(sub)?
     } else {
         Vec::from(sub)
@@ -195,7 +194,7 @@ fn d_string(buffer: &Vec<u8>, offset: usize, tag: u8) -> PyResult<(String, usize
     Ok((string, last_index))
 }
 
-fn d_list(
+fn decode_list(
     buffer: &Vec<u8>,
     offset: usize,
     tag: Variant,
@@ -204,22 +203,21 @@ fn d_list(
 ) -> PyResult<(Vec<ParsedData>, usize)> {
     let (elements_count, read) = if tag >= Variant::List1 && tag <= Variant::List10 {
         let elements_count: u64 = tag as u64 - LIST_INDEX as u64;
-        let read: usize = 0;
-        (elements_count, read)
+        (elements_count, 0)
     } else {
-        d_varint(buffer, offset)?
+        decode_varint(buffer, offset)?
     };
     let mut result = Vec::with_capacity(elements_count as usize);
     let mut new_offset = offset + read;
     for _ in 0..elements_count {
-        let (el, off) = d_base(buffer, new_offset, opts, current_depth)?;
+        let (el, off) = decode(buffer, new_offset, opts, current_depth)?;
         result.push(el);
         new_offset = off
     }
     Ok((result, new_offset))
 }
 
-fn d_tuple(
+fn decode_tuple(
     buffer: &Vec<u8>,
     offset: usize,
     tag: Variant,
@@ -233,59 +231,73 @@ fn d_tuple(
             Variant::Tuple4 => 4,
             _ => 5,
         };
-        let read: usize = 0;
-        (elements_count, read)
+        (elements_count, 0)
     } else {
-        d_varint(buffer, offset)?
+        decode_varint(buffer, offset)?
     };
     let mut result = Vec::with_capacity(elements_count as usize);
     let mut new_offset = offset + read;
     for _ in 0..elements_count {
-        let (el, off) = d_base(buffer, new_offset, opts, current_depth)?;
+        let (el, off) = decode(buffer, new_offset, opts, current_depth)?;
         result.push(el);
         new_offset = off
     }
     Ok((result, new_offset))
 }
 
-fn d_set(
+fn decode_set(
     buffer: &Vec<u8>,
     offset: usize,
     tag: Variant,
     opts: &mut DecodeOptions,
     current_depth: u32,
 ) -> PyResult<(Vec<ParsedData>, usize)> {
-    let (result, new_offset) = d_list(buffer, offset, tag, opts, current_depth)?;
+    let (result, new_offset) = decode_list(buffer, offset, tag, opts, current_depth)?;
     Ok((result, new_offset))
 }
 
-fn d_dict(
+fn decode_dict(
     buffer: &Vec<u8>,
     offset: usize,
     opts: &mut DecodeOptions,
     current_depth: u32,
 ) -> PyResult<(Vec<(ParsedData, ParsedData)>, usize)> {
-    let (elements_count, read) = d_varint(buffer, offset)?;
+    let (elements_count, read) = decode_varint(buffer, offset)?;
     let mut result: Vec<(ParsedData, ParsedData)> = Vec::with_capacity(elements_count as usize);
     let mut new_offset = offset + read;
     for _ in 0..elements_count {
-        let (key, off) = d_base(buffer, new_offset, opts, current_depth)?;
+        let (key, off) = decode(buffer, new_offset, opts, current_depth)?;
         new_offset = off;
-        let (value, off) = d_base(buffer, new_offset, opts, current_depth)?;
+        let (value, off) = decode(buffer, new_offset, opts, current_depth)?;
         result.push((key, value));
         new_offset = off;
     }
     Ok((result, new_offset))
 }
 
-fn d_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
-    let (size, read) = d_varint(buffer, offset)?;
+fn decode_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
+    let (size, read) = decode_varint(buffer, offset)?;
     let new_offset = offset + read;
     let data = buffer[new_offset..new_offset + size as usize].to_vec();
     Ok((data, new_offset + size as usize))
 }
 
-fn d_base(
+fn parse_float(
+    buffer: &Vec<u8>,
+    offset: usize,
+    opts: &mut DecodeOptions,
+    current_depth: u32,
+) -> PyResult<(f64, usize)> {
+    let (pd, new_offset) = decode(buffer, offset, opts, current_depth)?;
+    match pd {
+        ParsedData::Float(v) => Ok((v, new_offset)),
+        _ => Err(PyValueError::new_err(
+            "Unexpected type while parsing DateTime, expected Float",
+        )),
+    }
+}
+
+fn decode(
     buffer: &Vec<u8>,
     offset: usize,
     opts: &mut DecodeOptions,
@@ -315,127 +327,133 @@ fn d_base(
             Ok(Variant::CacheInt) => {
                 if let Some(&index) = buffer.get(new_offset) {
                     match opts.get_int(index) {
-                        Some(value) => Ok((ParsedData::Int(*value), new_offset+1)),
-                        None => Err(PyValueError::new_err("Unexpected cache fail for ints")),
+                        Some(value) => Ok((ParsedData::Int(*value), new_offset + 1)),
+                        None => {
+                            let e_m = format!(
+                                "[CACHE]Unexpected integer cache fail: nothing at index {}",
+                                index
+                            );
+                            Err(PyValueError::new_err(e_m))
+                        }
                     }
                 } else {
-                    Err(PyValueError::new_err("Unexpected cache fail for ints"))
+                    let e_m = format!("[CACHE]No integer cache index at offset {}", new_offset);
+                    Err(PyValueError::new_err(e_m))
                 }
             }
             Ok(Variant::CacheFloat) => {
                 if let Some(&index) = buffer.get(new_offset) {
                     match opts.get_float(index) {
-                        Some(value) => Ok((ParsedData::Float(*value), new_offset+1)),
-                        None => Err(PyValueError::new_err("Unexpected cache fail for floats")),
+                        Some(value) => Ok((ParsedData::Float(*value), new_offset + 1)),
+                        None => {
+                            let e_m = format!(
+                                "[CACHE]Unexpected float cache fail: nothing at index {}",
+                                index
+                            );
+                            Err(PyValueError::new_err(e_m))
+                        }
                     }
                 } else {
-                    Err(PyValueError::new_err("Unexpected cache fail for floats"))
+                    let e_m = format!("[CACHE]No float cache index at offset {}", new_offset);
+                    Err(PyValueError::new_err(e_m))
                 }
             }
             Ok(Variant::CacheString) => {
                 if let Some(&index) = buffer.get(new_offset) {
                     match opts.get_string(index) {
-                        Some(value) => Ok((ParsedData::String((*value).parse()?), new_offset+1)),
-                        None => Err(PyValueError::new_err("Unexpected cache fail for strings")),
+                        Some(value) => Ok((ParsedData::String((*value).parse()?), new_offset + 1)),
+                        None => {
+                            let e_m = format!(
+                                "[CACHE]Unexpected string cache fail: nothing at index {}",
+                                index
+                            );
+                            Err(PyValueError::new_err(e_m))
+                        }
                     }
                 } else {
-                    Err(PyValueError::new_err("Unexpected cache fail for strings"))
+                    let e_m = format!("[CACHE]No string cache index at offset {}", new_offset);
+                    Err(PyValueError::new_err(e_m))
                 }
             }
             Ok(Variant::DateTimeNoTz) => {
-                let (pd, new_offset) = d_base(buffer, new_offset, opts, current_depth)?;
-                match pd {
-                    ParsedData::Float(v) => Ok((ParsedData::DateTimeNoTz(v), new_offset)),
-                    _ => Err(PyValueError::new_err(
-                        "Unexpected type while parsing DateTime, expected Float",
-                    )),
-                }
+                let (f, new_offset) = parse_float(buffer, new_offset, opts, current_depth)?;
+                Ok((ParsedData::DateTimeNoTz(f), new_offset))
             }
             Ok(Variant::DateTimeOffset) => {
-                let (pd, new_offset) = d_base(buffer, new_offset, opts, current_depth)?;
-                let value = match pd {
-                    ParsedData::Float(value) => value,
-                    _ => return Err(PyValueError::new_err("Unexpected type while parsing DateTime, expected Float")),
-                };
-                let (pd, new_offset) =
-                    d_base(buffer, new_offset, opts, current_depth)?;
+                let (f, new_offset) = parse_float(buffer, new_offset, opts, current_depth)?;
+                let (pd, new_offset) = decode(buffer, new_offset, opts, current_depth)?;
                 match pd {
-                    ParsedData::Int(v) => Ok((ParsedData::DateTimeOffset((value, v)), new_offset)),
+                    ParsedData::Int(v) => Ok((ParsedData::DateTimeOffset((f, v)), new_offset)),
                     _ => Err(PyValueError::new_err(
                         "Unexpected type while parsing DateTime, expected Int",
                     )),
                 }
             }
             Ok(Variant::DateTimeIana) => {
-                let (pd, new_offset) = d_base(buffer, new_offset, opts, current_depth)?;
-                let value = match pd {
-                    ParsedData::Float(value) => value,
-                    _ => return Err(PyValueError::new_err("Unexpected type while parsing DateTime, expected Float")),
-                };
-                let (pd, new_offset) =
-                    d_base(buffer, new_offset, opts, current_depth)?;
+                let (f, new_offset) = parse_float(buffer, new_offset, opts, current_depth)?;
+                let (pd, new_offset) = decode(buffer, new_offset, opts, current_depth)?;
                 match pd {
-                    ParsedData::String(v) => Ok((ParsedData::DateTimeIana((value, v)), new_offset)),
+                    ParsedData::String(v) => Ok((ParsedData::DateTimeIana((f, v)), new_offset)),
                     _ => Err(PyValueError::new_err(
                         "Unexpected type while parsing DateTimeIana, expected String",
                     )),
                 }
             }
             Ok(Variant::Float) => {
-                let (value, off) = d_float(buffer, new_offset)?;
+                let (value, off) = decode_float(buffer, new_offset)?;
                 opts.add_float(value);
                 Ok((ParsedData::Float(value), new_offset + off))
             }
             Ok(i) if i >= Variant::Int1000 && i <= Variant::Int100 => {
-                let value = d_optimized_int(i as u8);
+                let value = decode_optimized_int(i);
                 Ok((ParsedData::Int(value), new_offset))
             }
             Ok(t)
                 if (t >= Variant::FloatNoDecimals && t <= Variant::Float6)
                     || (t >= Variant::FloatNoDecimalsNeg && t <= Variant::Float6Neg) =>
             {
-                let (value, off) = d_optimized_float(buffer, new_offset, t as u8)?;
+                let (value, off) = decode_optimized_float(buffer, new_offset, t)?;
                 opts.add_float(value);
                 Ok((ParsedData::Float(value), new_offset + off))
             }
             Ok(Variant::IntPositive) => {
-                let (value, off) = d_varint(buffer, new_offset)?;
+                let (value, off) = decode_varint(buffer, new_offset)?;
                 opts.add_int(value as i64);
                 Ok((ParsedData::Int(value as i64), new_offset + off))
             }
             Ok(Variant::IntNegative) => {
-                let (value, off) = d_varint(buffer, new_offset)?;
+                let (value, off) = decode_varint(buffer, new_offset)?;
                 opts.add_int(-(value as i64));
                 Ok((ParsedData::Int(-(value as i64)), new_offset + off))
             }
             Ok(t) if (t >= Variant::StringCompressed && t <= Variant::String15) => {
-                let (value, offset) = d_string(buffer, new_offset, t as u8)?;
+                let (value, offset) = decode_string(buffer, new_offset, t)?;
                 opts.add_string(&value);
                 Ok((ParsedData::String(value), offset))
             }
             Ok(Variant::String) => {
-                let (value, offset) = d_string(buffer, new_offset, Variant::String as u8)?;
+                let (value, offset) = decode_string(buffer, new_offset, Variant::String)?;
                 opts.add_string(&value);
                 Ok((ParsedData::String(value), offset))
             }
             Ok(t) if t == Variant::List || (t >= Variant::List1 && t <= Variant::List10) => {
-                let (value, offset) = d_list(buffer, new_offset, t, opts, current_depth + 1)?;
+                let (value, offset) = decode_list(buffer, new_offset, t, opts, current_depth + 1)?;
                 Ok((ParsedData::List(value), offset))
             }
             Ok(t) if t == Variant::Tuple || (t >= Variant::Tuple2 && t <= Variant::Tuple5) => {
-                let (value, offset) = d_tuple(buffer, new_offset, t, opts, current_depth + 1)?;
+                let (value, offset) = decode_tuple(buffer, new_offset, t, opts, current_depth + 1)?;
                 Ok((ParsedData::Tuple(value), offset))
             }
             Ok(s) if s == Variant::Set => {
-                let (value, offset) = d_set(buffer, new_offset, s, opts, current_depth + 1)?;
+                let (value, offset) = decode_set(buffer, new_offset, s, opts, current_depth + 1)?;
                 Ok((ParsedData::Set(value), offset))
             }
             Ok(Variant::Dict) => {
-                let (value, offset) = d_dict(buffer, new_offset, opts, current_depth + 1)?;
+                let (value, offset) = decode_dict(buffer, new_offset, opts, current_depth + 1)?;
                 Ok((ParsedData::Dict(value), offset))
             }
             Ok(Variant::Bytes) => {
-                let (value, offset) = d_bytes(buffer, new_offset)?;
+                let (value, offset) = decode_bytes(buffer, new_offset)?;
                 Ok((ParsedData::Bytes(value), offset))
             }
             _ => {
@@ -449,7 +467,7 @@ fn d_base(
     }
 }
 
-pub fn r_decrypt_base(
+pub fn unpack(
     py: Python<'_>,
     buffer: Vec<u8>,
     offset: usize,
@@ -457,7 +475,7 @@ pub fn r_decrypt_base(
 ) -> PyResult<(Bound<'_, PyAny>, usize)> {
     let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
     let mut opts = DecodeOptions::new(real_depth);
-    let (result, new_offset) = d_base(&buffer, offset, &mut opts, 1)?;
+    let (result, new_offset) = decode(&buffer, offset, &mut opts, 1)?;
     Ok((result.into_pyobject(py)?, new_offset))
 }
 
@@ -466,18 +484,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_first() {
+    fn test_float() {
         let b = vec![1, 0x40, 0x09, 0x21, 0xFB, 0x54, 0x44, 0x2D, 0x18];
-        let (a, b) = d_float(&b, 1).ok().unwrap();
+        let (a, b) = decode_float(&b, 1).ok().unwrap();
         assert_eq!(a, std::f64::consts::PI);
         assert_eq!(b, 8);
+    }
+
+    #[test]
+    fn test_varint() {
+        let b = vec![1, 10, 255, 255, 255, 255, 255, 255, 255, 255, 127];
+        let (a, b) = decode_varint(&b, 2).ok().unwrap();
+        assert_eq!(a, 9_223_372_036_854_775_807);
+        assert_eq!(9, b);
+    }
+
+    #[test]
+    fn test_varint_negative() {
+        let b = vec![1, 11, 128, 128, 128, 128, 128, 128, 128, 128, 128, 1];
+        let (a, b) = decode_varint(&b, 2).ok().unwrap();
+        assert_eq!(a, 9223372036854775808);
+        assert_eq!(10, b);
     }
 
     #[test]
     fn test_dt_no_tz() {
         let mut opts = DecodeOptions::new(100);
         let b = vec![1, 27, 12, 65, 218, 168, 5, 80, 74, 250, 240];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(a, ParsedData::DateTimeNoTz(1788876097.171566));
         assert_eq!(11, b);
     }
@@ -486,7 +520,7 @@ mod tests {
     fn test_dt_offset() {
         let mut opts = DecodeOptions::new(100);
         let b = vec![1, 28, 12, 65, 218, 168, 5, 233, 49, 13, 246, 9];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(a, ParsedData::DateTimeOffset((1788876708.766477, 0)));
         assert_eq!(12, b);
     }
@@ -498,7 +532,7 @@ mod tests {
             1, 29, 12, 65, 218, 168, 12, 140, 185, 155, 145, 53, 69, 117, 114, 111, 112, 101, 47,
             76, 111, 110, 100, 111, 110,
         ];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::DateTimeIana((1788883506.90012, "Europe/London".to_string()))
@@ -513,7 +547,7 @@ mod tests {
             1, 14, 2, 28, 12, 65, 218, 168, 23, 128, 0, 0, 0, 10, 160, 56, 28, 12, 65, 218, 168,
             23, 128, 0, 0, 0, 10, 160, 56,
         ];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -528,7 +562,7 @@ mod tests {
     fn test_empty_bytes() {
         let mut opts = DecodeOptions::new(100);
         let b = vec![1, 18];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(a, ParsedData::BytesEmpty);
         assert_eq!(2, b);
     }
@@ -537,7 +571,7 @@ mod tests {
     fn test_bytes() {
         let mut opts = DecodeOptions::new(100);
         let b = vec![1, 19, 2, 1, 18];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(a, ParsedData::Bytes(vec![1, 18]));
         assert_eq!(5, b);
     }
@@ -546,7 +580,7 @@ mod tests {
     fn test_cache_string() {
         let mut opts = DecodeOptions::new(100);
         let b = vec![1, 83, 44, 116, 101, 115, 116, 37, 0, 37, 0];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -561,8 +595,10 @@ mod tests {
     #[test]
     fn test_cache_string2() {
         let mut opts = DecodeOptions::new(100);
-        let b = vec![1, 84, 44, 116, 101, 115, 116, 45, 116, 101, 115, 116, 49, 37, 0, 37, 1];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let b = vec![
+            1, 84, 44, 116, 101, 115, 116, 45, 116, 101, 115, 116, 49, 37, 0, 37, 1,
+        ];
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -579,7 +615,7 @@ mod tests {
     fn test_cache_floats() {
         let mut opts = DecodeOptions::new(100);
         let b = vec![1, 84, 22, 186, 2, 22, 187, 2, 38, 0, 38, 1];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -596,7 +632,7 @@ mod tests {
     fn test_cache_ints() {
         let mut opts = DecodeOptions::new(100);
         let b = vec![1, 84, 10, 233, 7, 10, 232, 132, 1, 10, 233, 7, 39, 0];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -612,8 +648,10 @@ mod tests {
     #[test]
     fn test_cache_dt_no_tz() {
         let mut opts = DecodeOptions::new(100);
-        let b = vec![1, 82, 27, 12, 65, 218, 169, 82, 17, 149, 203, 100, 27, 38, 0];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let b = vec![
+            1, 82, 27, 12, 65, 218, 169, 82, 17, 149, 203, 100, 27, 38, 0,
+        ];
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -627,8 +665,10 @@ mod tests {
     #[test]
     fn test_cache_dt_offset() {
         let mut opts = DecodeOptions::new(100);
-        let b = vec![1, 82, 28, 12, 65, 218, 169, 83, 150, 221, 112, 197, 10, 224, 234, 4, 28, 38, 0, 39, 0];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let b = vec![
+            1, 82, 28, 12, 65, 218, 169, 83, 150, 221, 112, 197, 10, 224, 234, 4, 28, 38, 0, 39, 0,
+        ];
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -642,8 +682,11 @@ mod tests {
     #[test]
     fn test_cache_dt_iana() {
         let mut opts = DecodeOptions::new(100);
-        let b = vec![1, 82, 29, 12, 65, 218, 169, 84, 2, 239, 134, 18, 53, 69, 117, 114, 111, 112, 101, 47, 76, 111, 110, 100, 111, 110, 29, 38, 0, 37, 0];
-        let (a, b) = d_base(&b, 1, &mut opts, 1).ok().unwrap();
+        let b = vec![
+            1, 82, 29, 12, 65, 218, 169, 84, 2, 239, 134, 18, 53, 69, 117, 114, 111, 112, 101, 47,
+            76, 111, 110, 100, 111, 110, 29, 38, 0, 37, 0,
+        ];
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
         assert_eq!(
             a,
             ParsedData::List(vec![
@@ -652,5 +695,26 @@ mod tests {
             ])
         );
         assert_eq!(31, b);
+    }
+
+    #[test]
+    fn test_cache_negative_ints() {
+        let mut opts = DecodeOptions::new(100);
+        let b = vec![
+            1, 86, 11, 232, 132, 1, 11, 240, 171, 1, 11, 1, 39, 0, 39, 1, 11, 1,
+        ];
+        let (a, b) = decode(&b, 1, &mut opts, 1).ok().unwrap();
+        assert_eq!(
+            a,
+            ParsedData::List(vec![
+                ParsedData::Int(-17000),
+                ParsedData::Int(-22000),
+                ParsedData::Int(-1),
+                ParsedData::Int(-17000),
+                ParsedData::Int(-22000),
+                ParsedData::Int(-1),
+            ])
+        );
+        assert_eq!(18, b);
     }
 }
