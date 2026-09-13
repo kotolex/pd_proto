@@ -3,7 +3,6 @@
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 
-pub const VARINT_SAFETY_LIMIT: usize = 10; // cause max value of 9_223_372_036_854_775_807 is 8 bytes
 pub const STRING_INDEX: usize = 40; // cause optimized strings starts with 41
 pub const INT_INDEX: usize = 60; // cause optimized ints starts with 61
 pub const LIST_INDEX: usize = 80; // cause optimized lists starts with 81

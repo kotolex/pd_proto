@@ -13,15 +13,14 @@ use pyo3::types::{PyDict, PyListMethods};
 pub fn encode_varint(mut number: u64, buffer: &mut Vec<u8>) {
     let mut buf = [0u8; 10];
     let mut idx = 0;
-    while number > 0 {
-        let mut byte = (number & 0x7F) as u8;
+    while number >= 0x80 {
+        buf[idx] = (number as u8 & 0x7F) | 0x80;
         number >>= 7;
-        if number > 0 {
-            byte |= 0x80;
-        }
-        buf[idx] = byte;
         idx += 1;
     }
+    buf[idx] = number as u8;
+    idx += 1;
+    buffer.reserve(idx);
     buffer.extend_from_slice(&buf[..idx]);
 }
 

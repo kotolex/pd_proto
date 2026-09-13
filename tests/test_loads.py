@@ -107,7 +107,7 @@ class TestLoads(TestCase):
             loads(b'\x01\x0f\x02\n\x01\n')
 
     def test_loads_fail_string_end_stream(self):
-        with self.assertRaises(ParseStringError):
+        with self.assertRaises(DataCorruptionError):
             loads(b'\x01*\xd1')
 
     def test_loads_fail_varint(self):

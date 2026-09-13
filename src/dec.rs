@@ -1,4 +1,4 @@
-use crate::constants::{INT_INDEX, LIST_INDEX, TEN, VARINT_SAFETY_LIMIT, Variant};
+use crate::constants::{INT_INDEX, LIST_INDEX, TEN, Variant};
 use crate::options::DecodeOptions;
 use crate::utils::decompress;
 use pyo3::IntoPyObjectExt;
@@ -82,31 +82,29 @@ impl<'py> IntoPyObject<'py> for ParsedData {
     }
 }
 
-pub fn decode_varint(bts: &Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
+pub fn decode_varint(bts: &Vec<u8>, mut offset: usize) -> PyResult<(u64, usize)> {
+    let start = offset;
     let mut number: u64 = 0;
     let mut shift = 0;
-    let mut bytes_read = 0;
-    let safety_limit = VARINT_SAFETY_LIMIT;
-    for &byte in &bts[offset..] {
-        bytes_read += 1;
+    loop {
+        let &byte = bts.get(offset).ok_or_else(|| {
+            PyValueError::new_err(format!("[END] Nothing to read at offset: {}", offset))
+        })?;
+        offset += 1;
         number |= ((byte & 0x7F) as u64) << shift;
         if (byte & 0x80) == 0 {
             break;
         }
         shift += 7;
-        if bytes_read >= safety_limit {
-            let error_message = format!(
+        if shift > 63 {
+            // check var_int is too big for u64 (data corrupted)
+            return Err(PyValueError::new_err(format!(
                 "[END] Int is too long or data corrupted, offset: {}",
-                offset + bytes_read
-            );
-            return Err(PyValueError::new_err(error_message));
+                offset
+            )));
         }
     }
-    if bytes_read == 0 || (bytes_read == number as usize && number == 0) {
-        let error_message = format!("[END] Nothing to read at offset: {}", offset);
-        return Err(PyValueError::new_err(error_message));
-    }
-    Ok((number, bytes_read))
+    Ok((number, offset - start))
 }
 
 fn decode_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
@@ -284,7 +282,7 @@ fn decode_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
     if buffer.len() < last_index {
         let e_m = format!(
             "[BYTES] Not enough bytes, need {}, but have only {} bytes left at offset {}",
-            last_index -offset,
+            last_index - offset,
             buffer.len() - offset,
             offset
         );
