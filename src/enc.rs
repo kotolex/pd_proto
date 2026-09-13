@@ -200,13 +200,13 @@ fn encode_string(value: &str, buffer: &mut Vec<u8>, opts: &mut Options) {
     buffer.extend(encoded);
 }
 
-fn encode_bytes(value: Vec<u8>, buffer: &mut Vec<u8>) {
+fn encode_bytes(value: &mut Vec<u8>, buffer: &mut Vec<u8>) {
     if value.len() == 0 {
         buffer.push(Variant::BytesEmpty as u8)
     } else {
         buffer.push(Variant::Bytes as u8);
         encode_varint(value.len() as u64, buffer);
-        buffer.extend(value);
+        buffer.append(value);
     }
 }
 
@@ -239,8 +239,8 @@ fn encode(
         let val: &str = item.extract()?;
         encode_string(val, buffer, opts);
     } else if py_type.is(&py.get_type::<PyBytes>()) {
-        let val: Vec<u8> = item.extract()?;
-        encode_bytes(val, buffer);
+        let mut val: Vec<u8> = item.extract()?;
+        encode_bytes(&mut val, buffer);
     } else if py_type.is(&py.get_type::<PyList>()) {
         let sub_list: &Bound<'_, PyList> = item.cast::<PyList>().unwrap();
         encode_list(py, &sub_list, depth + 1, buffer, opts)?;
@@ -282,18 +282,18 @@ fn encode_dict(
 }
 fn encode_set(
     py: Python<'_>,
-    list: &Bound<'_, PySet>,
+    a_set: &Bound<'_, PySet>,
     depth: u32,
     buffer: &mut Vec<u8>,
     opts: &mut Options,
 ) -> PyResult<()> {
-    if list.len() == 0 {
+    if a_set.len() == 0 {
         buffer.push(Variant::SetEmpty as u8);
         return Ok(());
     }
     buffer.push(Variant::Set as u8);
-    encode_varint(list.len() as u64, buffer);
-    for item in list.iter() {
+    encode_varint(a_set.len() as u64, buffer);
+    for item in a_set.iter() {
         encode(py, item, buffer, depth, opts)?;
     }
     Ok(())

@@ -26,10 +26,10 @@ pickle_data = pickle.dumps(data)
 result =  100 - (len(py_data) / (len(pickle_data) / 100))
 print(f"Size difference: {len(py_data) - len(pickle_data)} byte, {result:.2f}% better")
 
-print("ENCRYPT")
+print("ENCODE pickle")
 print(timeit("dumps(data)", "from __main__ import dumps, data, pickle", number=10000))
 print(timeit("pickle.dumps(data)", "from __main__ import dumps, data, pickle", number=10000))
-print("DECRYPT")
+print("DECODE pickle")
 print(timeit("loads(py_data)", "from __main__ import loads, py_data, pickle, pickle_data", number=10000))
 print(timeit("pickle.loads(pickle_data)", "from __main__ import loads, py_data, pickle, pickle_data", number=10000))
 
