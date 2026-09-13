@@ -37,6 +37,7 @@ jobs:
       - name: Run Rust tests
         run: |
           export PATH="$HOME/.cargo/bin:$PATH"
+          cargo check
           cargo test --verbose
 
       - name: Lint

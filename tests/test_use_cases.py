@@ -1,7 +1,8 @@
 import math
 import pickle
+import random
 from datetime import datetime, timezone, timedelta
-from string import ascii_letters, digits
+from string import ascii_letters, digits, ascii_lowercase
 from unittest import TestCase, main
 from zoneinfo import ZoneInfo, available_timezones
 
@@ -18,6 +19,10 @@ test_floats = (
     395.6528, 458.860082, 139.702, 561.355861, 0.0, 0.1245, 1234.1, 3.141592,
     12349.0, 12.13020, -395.6528, -458.860082, -139.702, -561.355861, -0.1245, -1234.1, -3.141592,
 )
+
+
+def get_random_series(length: int) -> str:
+    return "".join(random.choices(list(ascii_lowercase), k=length))
 
 
 class TestUseCases(TestCase):
@@ -55,6 +60,17 @@ class TestUseCases(TestCase):
         pickle_data = pickle.dumps(data)
         result = 100 - (len(py_data) / (len(pickle_data) / 100))
         self.assertGreater(result, 30)
+
+    def test_diff_with_pickle_big_nesting(self):
+        num = 0
+        prev = {"name": "first", "age": num, "inner": []}
+        for _ in range(100):
+            num += 1
+            prev = {"name": get_random_series(10), "level": num, "inner": [prev]}
+        py_data = dumps(prev)
+        pickle_data = pickle.dumps(prev)
+        result = 100 - (len(py_data) / (len(pickle_data) / 100))
+        self.assertGreater(result, 20)
 
     def test_floats(self):
         params = (
@@ -155,6 +171,25 @@ class TestUseCases(TestCase):
         crypted = dumps(value)
         back = loads(crypted)
         self.assertTrue(math.isnan(back))
+
+    def test_1000(self):
+        params = (
+            [e for e in range(1001)],
+            [[1, 2] for _ in range(1001)],
+            tuple(e for e in range(1001)),
+            set(e for e in range(1001)),
+            {e: str(e) for e in range(1001)},
+            (ascii_letters * 20)[:1001],
+        )
+        for param in params:
+            with self.subTest(f"test 1000-element collections ({type(param)})"):
+                res = dumps(param)
+                self.assertEqual(loads(res), param)
+
+    def test_cache_ints(self):
+        data = b"\x01X\x0b\xe8\x84\x01\n\xf0\xab\x01\x0b\x01='\x00'\x01\x0b\x01="
+        result = loads(data)
+        self.assertEqual(result, [-17000, 22000, -1, 1, -17000, 22000, -1, 1])
 
 
 if __name__ == '__main__':

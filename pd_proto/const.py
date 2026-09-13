@@ -52,7 +52,10 @@ class Variant(IntEnum):
     FLOAT_3_NEG = 33
     FLOAT_4_NEG = 34
     FLOAT_5_NEG = 35
-    FLOAT_6_NEG = 36  # <- 37, 38, 39
+    FLOAT_6_NEG = 36
+    CACHE_STRING = 37
+    CACHE_FLOAT = 38
+    CACHE_INT = 39
     STRING_COMPRESSED = 40
     STRING_1 = 41
     STRING_2 = 42
@@ -91,7 +94,7 @@ class Variant(IntEnum):
     INT_20 = 75
     INT_24 = 76
     INT_50 = 77
-    INT_100 = 78 # <- 79, 80
+    INT_100 = 78  # <- 79, 80
     LIST_1 = 81
     LIST_2 = 82
     LIST_3 = 83

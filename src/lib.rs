@@ -1,8 +1,8 @@
-mod arc;
 mod constants;
 mod dec;
 mod enc;
-mod pure;
+mod options;
+mod utils;
 
 use pyo3::prelude::*;
 
@@ -11,14 +11,14 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc; // should speed up alloc
 
 #[pymodule]
 mod pd_proto {
-    use crate::constants::FLOAT_DEFAULT_LIMIT;
-    use crate::dec::*;
-    use crate::enc::*;
+    use crate::dec::{decode_varint as dec_var, unpack as real_unpack};
+    use crate::enc::{encode_float as e_float, encode_varint as var_int, pack as real_pack};
+    use crate::options::Options;
     use pyo3::prelude::*;
 
     #[pyfunction]
     fn decode_varint(buffer: Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
-        d_varint(&buffer, offset)
+        dec_var(&buffer, offset)
     }
 
     #[pyfunction]
@@ -31,7 +31,8 @@ mod pd_proto {
     #[pyfunction]
     fn encode_float(value: f64) -> Vec<u8> {
         let mut v = Vec::new();
-        e_float(value, &mut v, FLOAT_DEFAULT_LIMIT);
+        let mut opts = Options::new_default();
+        e_float(value, &mut v, &mut opts);
         v
     }
 
@@ -44,7 +45,7 @@ mod pd_proto {
         float_limit: f64,
         string_length_limit: i32,
     ) -> PyResult<Vec<u8>> {
-        enc(
+        real_pack(
             py,
             data,
             protocol_version,
@@ -61,6 +62,6 @@ mod pd_proto {
         offset: usize,
         max_depth: i32,
     ) -> PyResult<(Bound<'_, PyAny>, usize)> {
-        r_decrypt_base(py, buffer, offset, max_depth)
+        real_unpack(py, buffer, offset, max_depth)
     }
 }

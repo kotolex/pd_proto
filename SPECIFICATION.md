@@ -111,6 +111,9 @@ Note: An asterisk * indicates a variable size dependent on the payload (e.g., st
 | negative float with 4 decimal places  |     `34`      |     3-8      | Represents negative float like -12.1234 etc.                                                                     |
 | negative float with 5 decimal places  |     `35`      |     4-8      | Represents negative float like -12.12345 etc.                                                                    |
 | negative float with 6 decimal places  |     `36`      |     4-8      | Represents negative float like -12.123456 etc.                                                                   |
+| cached string                         |     `37`      |      1       | Flag for cached value (string), next byte will be index in cache for the value                                   |
+| cached float                          |     `38`      |      1       | Flag for cached value (float), next byte will be index in cache for the value                                    |
+| cached int                            |     `39`      |      1       | Flag for cached value (int), next byte will be index in cache for the value                                      |
 | compressed string                     |     `40`      |     3-*      | Represents non-empty sting, compressed with **deflate** algorythm                                                |
 | string with 1-byte length             |     `41`      |      2       | Represents string with exactly 1 byte length, always UTF-8 encoding, e.g. "a"                                    |
 | string with 2-byte length             |     `42`      |      3       | Represents string with exactly 2 byte length, always UTF-8 encoding, e.g. "ab"                                   |
@@ -222,3 +225,18 @@ Example: Packing b'1' generates the sequence [1, 19, 1, 49], where 1 represents 
 The protocol does not support the serialization of user-defined subclasses derived from built-ins (e.g., a custom class inheriting from list). 
 The protocol's architecture is explicitly optimized for data structures rather than object behavior. Subclasses typically extend types to inject application logic. 
 To serialize custom entities or inherited classes, the developer must explicitly sanitize and convert the internal attributes into a native supported schema, such as a standard dict or tuple, prior to encoding.
+
+## Caching
+
+To optimize data transfer and reduce payload size, the protocol implements a strict client-side caching mechanism for repetitive data values.
+
+The system caches only specific data types that yield the highest compression efficiency:
+
+**Strings**: Limited to strings with a maximum length of 255 bytes (not chars/letters!).
+
+**Floats**: All floating-point numbers are eligible for caching.
+
+**Integers**: Only large integers strictly greater than 16384 (> 16384) are cached.
+
+The cache for each type is strictly limited to a maximum of 255 entries. Due to this hard upper limit, the cache guarantees zero risk of memory leaks or uncontrolled RAM consumption, even when processing massive volumes of data.
+When a value is cached, it is replaced in the data stream by a compact 2-byte structure: cache tag + index in cache
