@@ -21,40 +21,42 @@ def encode_float(number: float) -> bytearray:
 def pack(data: SupportedTypes, proto_version: int, max_depth: int, float_limit: float,
                  string_length_limit: int) -> bytes:
     """
-    Converts a supported Python type into a sequence of bytes. Implemented in Rust
+    Converts a supported Python type into a sequence of bytes. Implemented in Rust.
 
-    :param data: an object of any allowed type
-    :param proto_version: version of the protocol
-    :param max_depth: maximum nesting depth for collections, raise an error if exceeded. Use 0 to disabled it, but it
-    can lead to error
-    :param float_limit: limit for float optimisation, if float less than that value, pd_proto will try to optimize it.
-    Use 0 to disable optimisation
-    :param string_length_limit: limit for string optimisation, if string greater than that value, pd_proto will try
-    to compress it. Use 0 to disable optimisation
-    :return: bytes representation of data
-    :raises AttributeError when type is not supported
-    :raises ValueError when parsing depth exceeded
+    :param data: An object of any allowed type.
+    :param proto_version: The version of the protocol to use.
+    :param max_depth: Maximum nesting depth for collections; raises an error if exceeded.
+                      Set to 0 to disable this check (warning: can lead to errors).
+    :param float_limit: Threshold for float optimization. If a float is less than this value,
+                        pd_proto will attempt to optimize it. Set to 0 to disable optimization.
+    :param string_length_limit: Threshold for string optimization. If a string is longer than this value,
+                                pd_proto will attempt to compress it. Set to 0 to disable optimization.
+    :return: A bytes representation of the data.
+    :raises AttributeError: If the object type is not supported.
+    :raises ValueError: If the maximum nesting depth is exceeded.
     """
     ...
 
 def decode_varint(bts: bytes, offset: int) -> tuple[int, int]:
     """
-    Decodes a VarInt representation into a number
-    :param bts: a sequence of bytes
-    :param offset: index to read from
-    :return: a non-negative integer (or 0) and the number of bytes read
+    Decodes a VarInt representation into an integer.
+
+    :param bts: A sequence of bytes.
+    :param offset: The byte index to start reading from.
+    :return: A tuple containing the non-negative integer and the number of bytes read.
     """
     ...
 
 
 def unpack(bts: bytes, offset: int, max_depth:int) -> tuple[SupportedTypes, int]:
     """
-    Decodes bytes into an object of one of the supported types. Written in Rust.
-    :param bts: bytes representation of some object
-    :param max_depth: maximum nesting depth for collections, raise an error if exceeded. Use 0 to disabled it, but it
-    can lead to error
-    :param offset: index to read from
-    :return: a pair of an object of one of the supported types and offset value
-    :raise ValueError: if no data can be decoded, not all bytes was parsed, or data corrupted
+    Decodes bytes into an object of a supported type. Written in Rust.
+
+    :param bts: A bytes representation of an object.
+    :param max_depth: Maximum nesting depth for collections; raises an error if exceeded.
+                      Set to 0 to disable this check (warning: can lead to errors).
+    :param offset: The byte index to start reading from.
+    :return: A tuple containing the decoded object and the new offset value.
+    :raises ValueError: If no data can be decoded, not all bytes were parsed, or the data is corrupted.
     """
     ...

@@ -82,7 +82,7 @@ impl<'py> IntoPyObject<'py> for ParsedData {
     }
 }
 
-pub fn decode_varint(bts: &Vec<u8>, mut offset: usize) -> PyResult<(u64, usize)> {
+pub fn decode_varint(bts: &[u8], mut offset: usize) -> PyResult<(u64, usize)> {
     let start = offset;
     let mut number: u64 = 0;
     let mut shift = 0;
@@ -107,7 +107,7 @@ pub fn decode_varint(bts: &Vec<u8>, mut offset: usize) -> PyResult<(u64, usize)>
     Ok((number, offset - start))
 }
 
-fn decode_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
+fn decode_float(buffer: &[u8], offset: usize) -> PyResult<(f64, usize)> {
     if buffer.len() < offset + FLOAT_BYTES {
         let e_m = format!(
             "[FLOAT] Not enough bytes, need {}, but have only {} bytes left at offset {}",
@@ -123,7 +123,7 @@ fn decode_float(buffer: &Vec<u8>, offset: usize) -> PyResult<(f64, usize)> {
     }
 }
 
-fn decode_optimized_float(buffer: &Vec<u8>, offset: usize, tag: Variant) -> PyResult<(f64, usize)> {
+fn decode_optimized_float(buffer: &[u8], offset: usize, tag: Variant) -> PyResult<(f64, usize)> {
     let (value, read) = decode_varint(buffer, offset)?;
     if tag == Variant::FloatNoDecimals {
         return Ok((value as f64, read));
@@ -157,7 +157,7 @@ fn decode_optimized_int(tag: Variant) -> i64 {
     }
 }
 
-fn decode_string(buffer: &Vec<u8>, offset: usize, tag: Variant) -> PyResult<(String, usize)> {
+fn decode_string(buffer: &[u8], offset: usize, tag: Variant) -> PyResult<(String, usize)> {
     let last_index;
     let mut new_offset = offset;
     let (value, read) = decode_varint(buffer, offset)?;
@@ -275,7 +275,7 @@ fn decode_dict(
     Ok((result, new_offset))
 }
 
-fn decode_bytes(buffer: &Vec<u8>, offset: usize) -> PyResult<(Vec<u8>, usize)> {
+fn decode_bytes(buffer: &[u8], offset: usize) -> PyResult<(Vec<u8>, usize)> {
     let (size, read) = decode_varint(buffer, offset)?;
     let new_offset = offset + read;
     let last_index = new_offset + size as usize;
@@ -308,7 +308,7 @@ fn parse_float(
 }
 
 fn decode_cached_int(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     opts: &mut DecodeOptions,
 ) -> PyResult<(ParsedData, usize)> {
@@ -330,7 +330,7 @@ fn decode_cached_int(
 }
 
 fn decode_cached_float(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     opts: &mut DecodeOptions,
 ) -> PyResult<(ParsedData, usize)> {
@@ -352,7 +352,7 @@ fn decode_cached_float(
 }
 
 fn decode_cached_string(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     opts: &mut DecodeOptions,
 ) -> PyResult<(ParsedData, usize)> {
@@ -400,9 +400,9 @@ fn decode(
             Ok(Variant::SetEmpty) => Ok((ParsedData::Set(EMPTY_VEC), new_offset)),
             Ok(Variant::DictEmpty) => Ok((ParsedData::Dict(EMPTY_DICT), new_offset)),
             Ok(Variant::BytesEmpty) => Ok((ParsedData::BytesEmpty, new_offset)),
-            Ok(Variant::CacheInt) => decode_cached_int(&buffer, new_offset, opts),
-            Ok(Variant::CacheFloat) => decode_cached_float(&buffer, new_offset, opts),
-            Ok(Variant::CacheString) => decode_cached_string(&buffer, new_offset, opts),
+            Ok(Variant::CacheInt) => decode_cached_int(buffer, new_offset, opts),
+            Ok(Variant::CacheFloat) => decode_cached_float(buffer, new_offset, opts),
+            Ok(Variant::CacheString) => decode_cached_string(buffer, new_offset, opts),
             Ok(Variant::DateTimeNoTz) => {
                 let (f, new_offset) = parse_float(buffer, new_offset, opts, current_depth)?;
                 Ok((ParsedData::DateTimeNoTz(f), new_offset))

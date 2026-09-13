@@ -6,17 +6,18 @@ from pd_proto.errors import CycleLinksError, UnsupportedTypeError, PDProtoError,
 def dumps(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: float = FLOAT_LIMIT,
           string_length_limit: int = STRING_LIMIT) -> bytes:
     """
-    Converts a supported Python type into a sequence of bytes
-    :param data: an object of any allowed type
-    :param max_depth: maximum nesting depth for collections, raise an error if exceeded. Use 0 to disable it, but it
-    can lead to error
-    :param float_limit: limit for float optimisation, if float less than that value, pd_proto will try to optimize it.
-    Use 0 to disable optimisation
-    :param string_length_limit: limit for string optimisation, if string greater than that value, pd_proto will try
-    to compress it. Use 0 to disable optimisation
-    :return: bytes representation of data
-    :raises UnsupportedTypeError when type is not supported
-    :raises CycleLinksError when collection contains link on self
+    Converts a supported Python type into a sequence of bytes.
+
+    :param data: An object of any allowed type.
+    :param max_depth: Maximum nesting depth for collections; raises an error if exceeded.
+                      Set to 0 to disable this check (warning: can lead to errors/stack overflow).
+    :param float_limit: Threshold for float optimization. If a float is less than this value,
+                        pd_proto will attempt to optimize it. Set to 0 to disable optimization.
+    :param string_length_limit: Threshold for string optimization. If a string is longer than this value,
+                                pd_proto will attempt to compress it. Set to 0 to disable optimization.
+    :return: A bytes representation of the data.
+    :raises UnsupportedTypeError: If the type is not supported.
+    :raises CycleLinksError: If a collection contains a circular reference (link to itself).
     """
     try:
         result = pack(data, PROTOCOL_VERSION, max_depth, float_limit, string_length_limit)

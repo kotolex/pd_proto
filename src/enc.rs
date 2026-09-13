@@ -29,7 +29,7 @@ fn encode_int(num: i64, buffer: &mut Vec<u8>, opts: &mut Options) {
         buffer.push(Variant::IntZero as u8);
         return;
     }
-    if num >= 1 && num <= 13 {
+    if (1..=13).contains(&num) {
         let tag = INT_INDEX + num as usize; // cause INT_1=61 etc.
         buffer.push(tag as u8);
         return;
@@ -200,7 +200,7 @@ fn encode_string(value: &str, buffer: &mut Vec<u8>, opts: &mut Options) {
 }
 
 fn encode_bytes(value: &mut Vec<u8>, buffer: &mut Vec<u8>) {
-    if value.len() == 0 {
+    if value.is_empty() {
         buffer.push(Variant::BytesEmpty as u8)
     } else {
         buffer.push(Variant::Bytes as u8);
@@ -220,38 +220,38 @@ fn encode(
         return Err(PyValueError::new_err("Depth exceeded maximum"));
     }
     let py_type = item.get_type();
-    if py_type.is(&py.get_type::<PyBool>()) {
+    if py_type.is(py.get_type::<PyBool>()) {
         let val: bool = item.extract()?;
         encode_bool(val, buffer);
-    } else if py_type.is(&py.get_type::<PyDateTime>()) {
+    } else if py_type.is(py.get_type::<PyDateTime>()) {
         let val = item.cast_into::<PyDateTime>()?;
         encode_datetime(py, val, buffer, opts)?;
-    } else if py_type.is(&py.get_type::<PyInt>()) {
+    } else if py_type.is(py.get_type::<PyInt>()) {
         let val: i64 = item.extract()?;
         encode_int(val, buffer, opts);
-    } else if py_type.is(&py.get_type::<PyFloat>()) {
+    } else if py_type.is(py.get_type::<PyFloat>()) {
         let val: f64 = item.extract()?;
         encode_float(val, buffer, opts);
-    } else if py_type.is(&py.get_type::<PyNone>()) {
+    } else if py_type.is(py.get_type::<PyNone>()) {
         encode_none(buffer);
-    } else if py_type.is(&py.get_type::<PyString>()) {
+    } else if py_type.is(py.get_type::<PyString>()) {
         let val: &str = item.extract()?;
         encode_string(val, buffer, opts);
-    } else if py_type.is(&py.get_type::<PyBytes>()) {
+    } else if py_type.is(py.get_type::<PyBytes>()) {
         let mut val: Vec<u8> = item.extract()?;
         encode_bytes(&mut val, buffer);
-    } else if py_type.is(&py.get_type::<PyList>()) {
+    } else if py_type.is(py.get_type::<PyList>()) {
         let sub_list: &Bound<'_, PyList> = item.cast::<PyList>().unwrap();
-        encode_list(py, &sub_list, depth + 1, buffer, opts)?;
-    } else if py_type.is(&py.get_type::<PyTuple>()) {
+        encode_list(py, sub_list, depth + 1, buffer, opts)?;
+    } else if py_type.is(py.get_type::<PyTuple>()) {
         let sub_list: &Bound<'_, PyTuple> = item.cast::<PyTuple>().unwrap();
-        encode_tuple(py, &sub_list, depth + 1, buffer, opts)?;
-    } else if py_type.is(&py.get_type::<PySet>()) {
+        encode_tuple(py, sub_list, depth + 1, buffer, opts)?;
+    } else if py_type.is(py.get_type::<PySet>()) {
         let sub_list: &Bound<'_, PySet> = item.cast::<PySet>().unwrap();
-        encode_set(py, &sub_list, depth + 1, buffer, opts)?;
-    } else if py_type.is(&py.get_type::<PyDict>()) {
+        encode_set(py, sub_list, depth + 1, buffer, opts)?;
+    } else if py_type.is(py.get_type::<PyDict>()) {
         let sub_list: &Bound<'_, PyDict> = item.cast::<PyDict>().unwrap();
-        encode_dict(py, &sub_list, depth + 1, buffer, opts)?;
+        encode_dict(py, sub_list, depth + 1, buffer, opts)?;
     } else {
         let name = py_type.name()?.to_string();
         let e_m = format!("Unsupported type-{}", name);

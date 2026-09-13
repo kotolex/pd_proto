@@ -64,7 +64,7 @@ You can configure certain serialization parameters to boost speed at the cost of
 
 **float_limit** - Specifies the threshold for float optimization. For details on how this optimization works, refer to the protocol specification. Defaults to 268_435_455.0. If set to a negative value or 0, no attempts will be made to optimize float sizes. This may boost performance but expands the result size since every float takes up 8 bytes.
 
-**string_length_limit** - Specifies the string size threshold for compression. Strings larger than this value (in bytes) will be compressed. Defaults to 100 bytes. If set to a negative value or 0, no strings will be compressed—for instance, if you know the data is already incompressible.
+**string_length_limit** - Specifies the string size threshold for compression. Strings larger than this value (in bytes) will be compressed. Defaults to 100 bytes. If set to a negative value or 0, no strings will be compressed - for instance, if you know the data is already incompressible.
 
 ### Errors
 
@@ -97,7 +97,7 @@ A notorious limitation of JSON is its inability to serialize bytes and dates, fo
 
 While `pickle` is highly optimized and executes rapidly (particularly within Linux environments), `pd_proto` delivers matching or superior processing speeds depending on the specific volume and composition of the dataset. Besides, `pd_proto` consistently yields a more compact serialized byte footprint.
 
-A distinct advantage of `pickle` is its inherent capacity to serialize user-defined class instances and custom subclasses derived from built-in types — a capability explicitly omitted from `pd_proto`. 
+A distinct advantage of `pickle` is its inherent capacity to serialize user-defined class instances and custom subclasses derived from built-in types - a capability explicitly omitted from `pd_proto`. 
 Instead, `pd_proto` maintains a strict, uncompromised focus on data structures, ensuring maximum throughput and minimal storage footprint. 
 
 Furthermore, `pd_proto` is entirely decoupled from specific Python runtime versions and is uniformly optimized across all operating systems, whereas `pickle` exhibits a pronounced performance bias toward Linux environments.

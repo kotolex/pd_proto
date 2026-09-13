@@ -1,67 +1,72 @@
 class PDProtoError(Exception):
     """
-    Parent for all types of errors in pd_proto, so you can use broader error in except clauses
+    Base class for all errors in pd_proto.
 
-    try:
-        code() # some parsing
-    except PDProtoError:
-        report() # do something on error
+    Can be used in try-except blocks to catch any library-specific exception.
+
+    Example:
+        try:
+            code()  # some parsing
+        except PDProtoError:
+            report()  # handle the error
     """
 
 
 class UnsupportedTypeError(PDProtoError):
     """
-    Raises when the type of object is not supported
+    Raised when the object type is not supported.
     """
 
 
 class EmptyDataError(PDProtoError):
     """
-    Raises when the data is empty
+    Raised when the input data is empty.
     """
 
 
 class ProtocolError(PDProtoError):
     """
-    Raises when the protocol is wrong
+    Raised when the protocol version is invalid or mismatched.
     """
+
 
 class IntegerOutOfBoundsError(PDProtoError):
     """
-    Raises when int (positive or negative) is over the limit
+    Raised when an integer exceeds the maximum or minimum allowed limit.
     """
+
 
 class DataCorruptionError(PDProtoError):
     """
-    Raises when something wrong with encrypted data: not enough bytes to parse, bytes left after parsing, etc.
+    Raised when data corruption is detected (e.g., missing bytes, unexpected trailing bytes).
     """
 
 
 class WrongTagError(DataCorruptionError):
     """
-    Raises when the tag is wrong, which often mean data corrupted
+    Raised when an invalid tag is encountered, which usually indicates data corruption.
     """
 
 
 class ParseFloatError(DataCorruptionError):
     """
-    Raises when the data is invalid and float value cannot be parsed
+    Raised when a float value cannot be parsed due to invalid data.
     """
 
 
 class ParseStringError(DataCorruptionError):
     """
-    Raises when the data is invalid and string value cannot be parsed
+    Raised when a string value cannot be parsed due to invalid data.
     """
 
 
 class BytesLeftError(DataCorruptionError):
     """
-    Raises when the parsing is over, but still have bytes left
+    Raised when unparsed bytes remain after processing is complete.
     """
 
 
 class CycleLinksError(DataCorruptionError):
     """
-    Raises when there is a cycle in parsing and recursion limit exceeded
+    Raised when a circular reference is detected and the nesting limit is exceeded.
     """

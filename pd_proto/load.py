@@ -25,16 +25,17 @@ ERROR_MAPPING = {
 
 def loads(bts: bytes, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
     """
-    Decodes bytes into an object of one of the supported types
-    :param bts: bytes representation of some object
-    :param max_depth: maximum nesting depth for collections, raise an error if exceeded. Use 0 to disable it, but it
-    can lead to error
-    :return: an object of one of the supported types
-    :raise EmptyDataError: if no data can be decoded
-    :raise ProtocolError: if a protocol version does not match the current one
-    :raise BytesLeftError: if not all bytes was parsed
-    :raise WrongTagError: if wrong tag appears in data
-    :raise PDProtoError: on any other error in Rust backend
+    Decodes bytes into an object of a supported type.
+
+    :param bts: A bytes representation of an object.
+    :param max_depth: Maximum nesting depth for collections; raises an error if exceeded.
+                      Set to 0 to disable this check (warning: can lead to errors).
+    :return: An object of one of the supported types.
+    :raises EmptyDataError: If no data can be decoded.
+    :raises ProtocolError: If the protocol version does not match the current one.
+    :raises BytesLeftError: If not all bytes were parsed.
+    :raises WrongTagError: If an invalid tag appears in the data.
+    :raises PDProtoError: For any other error in the Rust backend.
     """
     if len(bts) <= 1:
         raise EmptyDataError("Nothing to decrypt")

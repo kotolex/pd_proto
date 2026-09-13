@@ -49,16 +49,16 @@ impl DecodeOptions {
             int_index: 0,
         }
     }
-    pub fn add_string(&mut self, data: &String) {
-        if self.str_index >= u8::MAX || data.len() > DEFAULT_CACHE_STRING_LIMIT {
+    pub fn add_string(&mut self, data: &str) {
+        if self.str_index == u8::MAX || data.len() > DEFAULT_CACHE_STRING_LIMIT {
             return;
         }
-        self.cache_str.push(data.clone());
+        self.cache_str.push(data.to_owned());
         self.str_index += 1;
     }
 
     pub fn add_float(&mut self, data: f64) {
-        if self.float_index >= u8::MAX || !data.is_finite() {
+        if self.float_index == u8::MAX || !data.is_finite() {
             return;
         }
         self.cache_float.push(data);
@@ -66,7 +66,7 @@ impl DecodeOptions {
     }
 
     pub fn add_int(&mut self, data: i64) {
-        if self.int_index >= u8::MAX || data.abs() < DEFAULT_INT_LIMIT {
+        if self.int_index == u8::MAX || data.abs() < DEFAULT_INT_LIMIT {
             return;
         }
         self.cache_int.push(data);
@@ -118,7 +118,7 @@ impl Options {
     }
 
     pub fn add_string(&mut self, data: &[u8]) {
-        if self.str_index >= u8::MAX || data.len() > DEFAULT_CACHE_STRING_LIMIT {
+        if self.str_index == u8::MAX || data.len() > DEFAULT_CACHE_STRING_LIMIT {
             return;
         }
         if !self.cache_str.contains_key(data) {
@@ -128,7 +128,7 @@ impl Options {
     }
 
     pub fn add_float(&mut self, data: f64) {
-        if self.float_index >= u8::MAX || !data.is_finite() {
+        if self.float_index == u8::MAX || !data.is_finite() {
             return;
         }
         if !self.cache_float.contains_key(&SafeFloat(data)) {
@@ -138,7 +138,7 @@ impl Options {
     }
 
     pub fn add_int(&mut self, data: i64) {
-        if self.int_index >= u8::MAX || data.abs() < DEFAULT_INT_LIMIT {
+        if self.int_index == u8::MAX || data.abs() < DEFAULT_INT_LIMIT {
             return;
         }
         if !self.cache_int.contains_key(&data) {

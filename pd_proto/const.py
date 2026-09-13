@@ -2,11 +2,11 @@ from enum import IntEnum
 from datetime import datetime
 
 PROTOCOL_VERSION = 1
-FLOAT_LIMIT = 268_435_455.0
-STRING_LIMIT = 100
-DEPTH_LIMIT = 1000
-MIN_INT = -9_223_372_036_854_775_808
-MAX_INT = 9_223_372_036_854_775_807
+FLOAT_LIMIT = 268_435_455.0  # The default threshold for float optimization
+STRING_LIMIT = 100  # The default threshold for string compression
+DEPTH_LIMIT = 1000  # The default threshold for nesting
+MIN_INT = -9_223_372_036_854_775_808 # minimal bound for ints in protocol
+MAX_INT = 9_223_372_036_854_775_807 # maximum bound for ints in protocol
 
 SupportedTypes = None | bool | int | float | str | bytes | list | tuple | dict | set | datetime
 SupportedCollections = list | tuple | dict | set
@@ -15,6 +15,7 @@ SupportedCollections = list | tuple | dict | set
 class Variant(IntEnum):
     """
     Supported types and their codes(tags) in the resulting data
+    The Rust backend uses identical constants for its operations; this enum is kept here for reference only.
     """
     NULL = 0
     BOOL_TRUE = 1
