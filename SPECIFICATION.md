@@ -111,9 +111,9 @@ Note: An asterisk * indicates a variable size dependent on the payload (e.g., st
 | negative float with 4 decimal places  |     `34`      |     3-8      | Represents negative float like -12.1234 etc.                                                                     |
 | negative float with 5 decimal places  |     `35`      |     4-8      | Represents negative float like -12.12345 etc.                                                                    |
 | negative float with 6 decimal places  |     `36`      |     4-8      | Represents negative float like -12.123456 etc.                                                                   |
-| cached string                         |     `37`      |      1       | Flag for cached value (string), next byte will be index in cache for the value                                   |
-| cached float                          |     `38`      |      1       | Flag for cached value (float), next byte will be index in cache for the value                                    |
-| cached int                            |     `39`      |      1       | Flag for cached value (int), next byte will be index in cache for the value                                      |
+| cached string                         |     `37`      |      2       | Flag for cached value (string), next byte will be index in cache for the value                                   |
+| cached float                          |     `38`      |      2       | Flag for cached value (float), next byte will be index in cache for the value                                    |
+| cached int                            |     `39`      |      2       | Flag for cached value (int), next byte will be index in cache for the value                                      |
 | compressed string                     |     `40`      |     3-*      | Represents non-empty sting, compressed with **deflate** algorythm                                                |
 | string with 1-byte length             |     `41`      |      2       | Represents string with exactly 1 byte length, always UTF-8 encoding, e.g. "a"                                    |
 | string with 2-byte length             |     `42`      |      3       | Represents string with exactly 2 byte length, always UTF-8 encoding, e.g. "ab"                                   |
