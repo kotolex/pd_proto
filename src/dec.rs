@@ -297,6 +297,72 @@ fn parse_float(
     }
 }
 
+fn decode_cached_int(
+    buffer: &Vec<u8>,
+    offset: usize,
+    opts: &mut DecodeOptions,
+) -> PyResult<(ParsedData, usize)> {
+    if let Some(&index) = buffer.get(offset) {
+        match opts.get_int(index) {
+            Some(value) => Ok((ParsedData::Int(*value), offset + 1)),
+            None => {
+                let e_m = format!(
+                    "[CACHE] Unexpected integer cache fail: nothing at index {}",
+                    index
+                );
+                Err(PyValueError::new_err(e_m))
+            }
+        }
+    } else {
+        let e_m = format!("[CACHE] No integer cache index at offset {}", offset);
+        Err(PyValueError::new_err(e_m))
+    }
+}
+
+fn decode_cached_float(
+    buffer: &Vec<u8>,
+    offset: usize,
+    opts: &mut DecodeOptions,
+) -> PyResult<(ParsedData, usize)> {
+    if let Some(&index) = buffer.get(offset) {
+        match opts.get_float(index) {
+            Some(value) => Ok((ParsedData::Float(*value), offset + 1)),
+            None => {
+                let e_m = format!(
+                    "[CACHE] Unexpected float cache fail: nothing at index {}",
+                    index
+                );
+                Err(PyValueError::new_err(e_m))
+            }
+        }
+    } else {
+        let e_m = format!("[CACHE] No float cache index at offset {}", offset);
+        Err(PyValueError::new_err(e_m))
+    }
+}
+
+fn decode_cached_string(
+    buffer: &Vec<u8>,
+    offset: usize,
+    opts: &mut DecodeOptions,
+) -> PyResult<(ParsedData, usize)> {
+    if let Some(&index) = buffer.get(offset) {
+        match opts.get_string(index) {
+            Some(value) => Ok((ParsedData::String((*value).parse()?), offset + 1)),
+            None => {
+                let e_m = format!(
+                    "[CACHE] Unexpected string cache fail: nothing at index {}",
+                    index
+                );
+                Err(PyValueError::new_err(e_m))
+            }
+        }
+    } else {
+        let e_m = format!("[CACHE] No string cache index at offset {}", offset);
+        Err(PyValueError::new_err(e_m))
+    }
+}
+
 fn decode(
     buffer: &Vec<u8>,
     offset: usize,
@@ -324,57 +390,9 @@ fn decode(
             Ok(Variant::SetEmpty) => Ok((ParsedData::Set(EMPTY_VEC), new_offset)),
             Ok(Variant::DictEmpty) => Ok((ParsedData::Dict(EMPTY_DICT), new_offset)),
             Ok(Variant::BytesEmpty) => Ok((ParsedData::BytesEmpty, new_offset)),
-            Ok(Variant::CacheInt) => {
-                if let Some(&index) = buffer.get(new_offset) {
-                    match opts.get_int(index) {
-                        Some(value) => Ok((ParsedData::Int(*value), new_offset + 1)),
-                        None => {
-                            let e_m = format!(
-                                "[CACHE]Unexpected integer cache fail: nothing at index {}",
-                                index
-                            );
-                            Err(PyValueError::new_err(e_m))
-                        }
-                    }
-                } else {
-                    let e_m = format!("[CACHE]No integer cache index at offset {}", new_offset);
-                    Err(PyValueError::new_err(e_m))
-                }
-            }
-            Ok(Variant::CacheFloat) => {
-                if let Some(&index) = buffer.get(new_offset) {
-                    match opts.get_float(index) {
-                        Some(value) => Ok((ParsedData::Float(*value), new_offset + 1)),
-                        None => {
-                            let e_m = format!(
-                                "[CACHE]Unexpected float cache fail: nothing at index {}",
-                                index
-                            );
-                            Err(PyValueError::new_err(e_m))
-                        }
-                    }
-                } else {
-                    let e_m = format!("[CACHE]No float cache index at offset {}", new_offset);
-                    Err(PyValueError::new_err(e_m))
-                }
-            }
-            Ok(Variant::CacheString) => {
-                if let Some(&index) = buffer.get(new_offset) {
-                    match opts.get_string(index) {
-                        Some(value) => Ok((ParsedData::String((*value).parse()?), new_offset + 1)),
-                        None => {
-                            let e_m = format!(
-                                "[CACHE]Unexpected string cache fail: nothing at index {}",
-                                index
-                            );
-                            Err(PyValueError::new_err(e_m))
-                        }
-                    }
-                } else {
-                    let e_m = format!("[CACHE]No string cache index at offset {}", new_offset);
-                    Err(PyValueError::new_err(e_m))
-                }
-            }
+            Ok(Variant::CacheInt) => decode_cached_int(&buffer, new_offset, opts),
+            Ok(Variant::CacheFloat) => decode_cached_float(&buffer, new_offset, opts),
+            Ok(Variant::CacheString) => decode_cached_string(&buffer, new_offset, opts),
             Ok(Variant::DateTimeNoTz) => {
                 let (f, new_offset) = parse_float(buffer, new_offset, opts, current_depth)?;
                 Ok((ParsedData::DateTimeNoTz(f), new_offset))
