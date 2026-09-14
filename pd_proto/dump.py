@@ -31,5 +31,7 @@ def dumps(data: SupportedTypes, max_depth: int = DEPTH_LIMIT, float_limit: float
     except BaseException as e: # Rust panic error will be caught here
         if isinstance(e, (KeyboardInterrupt, SystemExit)):
             raise
-        raise PDProtoError("Unexpected error on encrypting data! Please check your data is correct and report an issue here") from e # TODO git rep
+        raise PDProtoError(f"Unexpected error on encrypting data!\n"
+                           f"Please check your data is correct and report an issue "
+                           f"here https://github.com/kotolex/pd_proto/issues") from e
     return result

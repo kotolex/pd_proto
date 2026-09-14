@@ -31,9 +31,9 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-keywords = ["binary", "python", "protocol", "pd_proto", "PeaceData", "PDProto", "pickle", "serialization"]
+keywords = ["binary", "python", "protocol", "pd_proto", "PeaceData", "PDProto", "pickle", "serialization", "proto", "buffer"]
 dependencies = []
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 
 [project.urls]
 Homepage = "https://github.com/kotolex/pd_proto"
