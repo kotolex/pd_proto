@@ -29,7 +29,7 @@ Knowing the practical realities of data transmission, `pd_proto` introduces seve
 Install the compiled library directly from PyPI using `pip`:
 
 ```bash
-pip install pd-proto
+pip install pd_proto
 ```
 
 ## Supported Types
