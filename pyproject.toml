@@ -11,7 +11,7 @@ strip = true
 
 [project]
 name = "pd_proto"
-version = "1.0.0"
+version = "0.9.1"
 description = "Binary protocol specializes exclusively in the ultra-fast serialization and deserialization of Python's built-in types"
 readme = "README.md"
 authors = [{ name = "kotolex", email = "farofwell@gmail.com" }]
