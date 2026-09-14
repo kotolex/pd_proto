@@ -1,6 +1,16 @@
 # pd_proto (Peace Data Protocol)
 
-> All detailed technical specifications, internal byte structures, layout constraints, and type tags can be explored in the comprehensive [Protocol Specification](SPECIFICATION.md).
+> All detailed technical specifications, internal byte structures, layout constraints, and type tags can be explored in the comprehensive [Protocol Specification](https://github.com/kotolex/pd_proto/blob/master/SPECIFICATION.md).
+
+<p>
+    <a href="https://pypi.org/project/pd-proto/"><img src="https://img.shields.io/pypi/status/pd-proto?style=flat-square"></a>
+    &nbsp;
+	<a href="https://pypi.org/project/pd-proto/"><img src="https://img.shields.io/pypi/v/pd-proto?style=flat-square"></a>
+    &nbsp;
+	<a href="https://pypi.org/project/pd-proto/"><img src="https://img.shields.io/pypi/pyversions/pd-proto?style=flat-square"></a>
+    &nbsp;
+	<a href="https://pypi.org/project/pd-proto/"><img src="https://img.shields.io/github/last-commit/kotolex/pd_proto/master?style=flat-square"></a>
+</p>
 
 ## Introduction
 
@@ -8,10 +18,14 @@ Python has firmly established itself as the most popular and widely adopted prog
 
 Because standard applications spend the vast majority of their CPU cycles manipulating and transmitting these exact primitives, **`pd_proto` specializes exclusively in the ultra-fast serialization and deserialization of Python's native built-in types**. By focusing on data structures rather than complex object graphs, class inheritance, or custom behavior, `pd_proto` bypasses the systemic overhead found in traditional serialization frameworks.
 
+**System Requirements:**
+- OS: 64-bit Operating System (Windows, Linux, macOS)
+- Python: Version 3.8 or higher
+
 ## Core Advantages
 
 * **Zero Dependencies:** Built entirely with native Python C-API bindings and a highly optimized Rust core, requiring no third-party libraries or external runtimes.
-* **Platform & Runtime Independent:** Fully decoupled from the underlying Operating System and specific Python version updates, ensuring absolute portability across Linux, macOS, and Windows.
+* **Platform & Runtime Independent:** Fully decoupled from the underlying Operating System and specific Python version updates, ensuring absolute portability across 64-bit Linux, macOS, and Windows.
 * **Minimal Binary Footprint:** Generates compiled payloads that are significantly smaller than equivalent byte streams produced by native `pickle` or `json`.
 * **Blazing Fast Performance:** Drastically outperforms native CPython serializers by stripping away dynamic object reflection and memory allocation overhead.
 

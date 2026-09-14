@@ -11,7 +11,7 @@ strip = true
 
 [project]
 name = "pd_proto"
-version = "0.9.2"
+version = "1.0.0"
 description = "Binary protocol specializes exclusively in the ultra-fast serialization and deserialization of Python's built-in types"
 readme = "README.md"
 authors = [{ name = "kotolex", email = "farofwell@gmail.com" }]
@@ -23,8 +23,13 @@ classifiers = [
     "Intended Audience :: Education",
     "Topic :: Software Development",
     "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
     "Development Status :: 5 - Production/Stable",
-    "Operating System :: OS Independent",
+    "Environment :: Win32 (MSWindows)",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -33,7 +38,7 @@ classifiers = [
 ]
 keywords = ["binary", "python", "protocol", "pd_proto", "PeaceData", "PDProto", "pickle", "serialization", "proto", "buffer"]
 dependencies = []
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 
 [project.urls]
 Homepage = "https://github.com/kotolex/pd_proto"
