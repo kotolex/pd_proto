@@ -115,3 +115,35 @@ A distinct advantage of `pickle` is its inherent capacity to serialize user-defi
 Instead, `pd_proto` maintains a strict, uncompromised focus on data structures, ensuring maximum throughput and minimal storage footprint. 
 
 Furthermore, `pd_proto` is entirely decoupled from specific Python runtime versions and is uniformly optimized across all operating systems, whereas `pickle` exhibits a pronounced performance bias toward Linux environments.
+
+## Benchmarks
+
+The size of serialized data remains identical across different operating systems and Python versions. 
+However, execution speed may vary depending on data volume, content, and the OS itself. 
+For instance, pickle is faster on Linux but processes `datetime` slowly. Below are a few benchmarks on simplest data across various operating systems.
+
+Windows 10 (Python 3.13.1 [MSC v.1942 64 bit (AMD64)] on win32)
+
+```pycon
+Python 3.13.1 >>> from pd_proto import dumps
+Python 3.13.1 >>> import json, pickle
+Python 3.13.1 >>> from timeit import timeit
+Python 3.13.1 >>> data = {1:1, "2":"2", 3:3.14, 4:[1,2,3]}
+Python 3.13.1 >>> dumps(data)
+b'\x01\x11\x04==)2%\x00?\x16\xba\x02@S=>?'
+Python 3.13.1 >>> json.dumps(data)
+'{"1": 1, "2": "2", "3": 3.14, "4": [1, 2, 3]}'
+Python 3.13.1 >>> pickle.dumps(data)
+b'\x80\x04\x95&\x00\x00\x00\x00\x00\x00\x00}\x94(K\x01K\x01\x8c\x012\x94h\x01K\x03G@\t\x1e\xb8Q\xeb\x85\x1fK\x04]\x94(K\x01K\x02K\x03eu.'
+Python 3.13.1 >>> timeit("dumps(data)", "from __main__ import data, dumps, pickle", number=1000_000)
+0.6568191999976989
+Python 3.13.1 >>> timeit("pickle.dumps(data)", "from __main__ import data, dumps, pickle", number=1000_000)
+0.8377401000034297
+Python 3.13.1 >>> timeit("json.dumps(data)", "from __main__ import data, dumps, pickle, json", number=1000_000)
+1.9830707000000984
+```
+
+MacOS Tahoe
+```
+
+```
