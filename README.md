@@ -120,9 +120,11 @@ Furthermore, `pd_proto` is entirely decoupled from specific Python runtime versi
 
 The size of serialized data remains identical across different operating systems and Python versions. 
 However, execution speed may vary depending on data volume, content, and the OS itself. 
-For instance, pickle is faster on Linux but processes `datetime` slowly. Below are a few benchmarks on simplest data across various operating systems.
+For instance, pickle is faster on Linux but processes `datetime` slowly. Below are a few benchmarks on the simplest data across various operating systems.
 
-Windows 10 (Python 3.13.1 [MSC v.1942 64 bit (AMD64)] on win32)
+If you add datetimes to this dataset, the performance gap with pickle becomes even more significant. As for JSON, you would have to convert datetimes to strings beforehand, since it does not support these data types natively. 
+
+**Windows 10 (Python 3.13.1 [MSC v.1942 64 bit (AMD64)] on win32)**
 
 ```pycon
 Python 3.13.1 >>> from pd_proto import dumps
@@ -143,7 +145,67 @@ Python 3.13.1 >>> timeit("json.dumps(data)", "from __main__ import data, dumps, 
 1.9830707000000984
 ```
 
-MacOS Tahoe
+**MacOS Tahoe (Python 3.13.1 [Clang 15.0.0 (clang-1500.3.9.4)] on darwin)**
+
+```pycon
+>>> data = {1:1, "2":"2", 3:3.14, 4:[1,2,3]}
+>>> import pickle, json
+>>> from pd_proto import dumps
+>>> from timeit import timeit
+>>> dumps(data)
+b'\x01\x11\x04==)2%\x00?\x16\xba\x02@S=>?'
+>>> json.dumps(data)
+'{"1": 1, "2": "2", "3": 3.14, "4": [1, 2, 3]}'
+>>> pickle.dumps(data)
+b'\x80\x04\x95&\x00\x00\x00\x00\x00\x00\x00}\x94(K\x01K\x01\x8c\x012\x94h\x01K\x03G@\t\x1e\xb8Q\xeb\x85\x1fK\x04]\x94(K\x01K\x02K\x03eu.'
+>>> timeit("dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+0.7029794589616358
+>>> timeit("pickle.dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+0.7053574579767883
+>>> timeit("json.dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+1.838942875037901
 ```
 
+**Linux Ubuntu 26 (Python 3.14.4 [GCC 15.2.0] on linux)**
+
+```pycon
+>>> import pickle, json
+... from pd_proto import dumps
+... from timeit import timeit
+...
+>>> data = {1:1, "2":"2", 3:3.14, 4:[1,2,3]}
+>>> dumps(data)
+b'\x01\x11\x04==)2%\x00?\x16\xba\x02@S=>?'
+>>> json.dumps(data)
+'{"1": 1, "2": "2", "3": 3.14, "4": [1, 2, 3]}'
+>>> pickle.dumps(data)
+b'\x80\x05\x95&\x00\x00\x00\x00\x00\x00\x00}\x94(K\x01K\x01\x8c\x012\x94h\x01K\x03G@\t\x1e\xb8Q\xeb\x85\x1fK\x04]\x94(K\x01K\x02K\x03eu.'
+>>> timeit("dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+0.7428264559999889
+>>> timeit("pickle.dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+0.8976360610000143
+>>> timeit("json.dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+2.200423194999985
+```
+
+**Linux Debian 13 (Python 3.13.5 [GCC 14.2.0] on linux)**
+
+```pycon
+>>> import pickle, json
+... from pd_proto import dumps
+... from timeit import timeit
+...
+>>> data = {1:1, "2":"2", 3:3.14, 4:[1,2,3]}
+>>> dumps(data)
+b'\x01\x11\x04==)2%\x00?\x16\xba\x02@S=>?'
+>>> json.dumps(data)
+'{"1": 1, "2": "2", "3": 3.14, "4": [1, 2, 3]}'
+>>> pickle.dumps(data)
+b'\x80\x04\x95&\x00\x00\x00\x00\x00\x00\x00}\x94(K\x01K\x01\x8c\x012\x94h\x01K\x03G@\t\x1e\xb8Q\xeb\x85\x1fK\x04]\x94(K\x01K\x02K\x03eu.'
+>>> timeit("dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+0.7543717089999973
+>>> timeit("pickle.dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+0.8993470230000185
+>>> timeit("json.dumps(data)", "from __main__ import dumps, data, pickle, json", number=1000_000)
+2.2170975030000477
 ```
