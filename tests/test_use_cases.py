@@ -1,13 +1,14 @@
 import math
 import pickle
 import random
+import tempfile
 from datetime import datetime, timezone, timedelta
 from string import ascii_letters, digits, ascii_lowercase
 from unittest import TestCase, main
 from zoneinfo import ZoneInfo, available_timezones
 
-from pd_proto.load import loads
-from pd_proto.dump import dumps
+from pd_proto.load import loads, load
+from pd_proto.dump import dumps, dump
 
 test_floats = (
     111.408802, 275.074313, 139.61, 676.7, 87.02144, 31.8763, 218.7, 601.99833,
@@ -190,6 +191,14 @@ class TestUseCases(TestCase):
         data = b"\x01X\x0b\xe8\x84\x01\n\xf0\xab\x01\x0b\x01='\x00'\x01\x0b\x01="
         result = loads(data)
         self.assertEqual(result, [-17000, 22000, -1, 1, -17000, 22000, -1, 1])
+
+    def test_dump_file(self):
+        data = {1: 1, "2": "2", 3: 3.14, 4: [1, 2, 3]}
+        with tempfile.NamedTemporaryFile() as tmp:
+            dump(tmp, data)
+            tmp.seek(0)
+            read_data = load(tmp)
+        self.assertEqual(read_data, data)
 
 
 if __name__ == '__main__':

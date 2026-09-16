@@ -1,7 +1,6 @@
 import json
 from timeit import timeit
-
-from pd_proto import loads, dumps
+from pd_proto import dumps, loads
 
 data = {
     "text": "Тестовая строка UTF-8",

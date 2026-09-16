@@ -1,10 +1,13 @@
 use crate::constants::{INT_INDEX, LIST_INDEX, TEN, Variant};
 use crate::options::DecodeOptions;
 use crate::utils::decompress;
+use memmap2::Mmap;
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDateTime, PyDelta, PyDict, PySet, PyTuple, PyTzInfo};
+use std::fs::File;
+use std::mem::ManuallyDrop;
 
 const FLOAT_BYTES: usize = 8;
 const EMPTY_VEC: Vec<ParsedData> = Vec::new();
@@ -195,7 +198,7 @@ fn decode_string(buffer: &[u8], offset: usize, tag: Variant) -> PyResult<(String
 }
 
 fn decode_list(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     tag: Variant,
     opts: &mut DecodeOptions,
@@ -218,7 +221,7 @@ fn decode_list(
 }
 
 fn decode_tuple(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     tag: Variant,
     opts: &mut DecodeOptions,
@@ -246,7 +249,7 @@ fn decode_tuple(
 }
 
 fn decode_set(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     tag: Variant,
     opts: &mut DecodeOptions,
@@ -257,7 +260,7 @@ fn decode_set(
 }
 
 fn decode_dict(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     opts: &mut DecodeOptions,
     current_depth: u32,
@@ -293,7 +296,7 @@ fn decode_bytes(buffer: &[u8], offset: usize) -> PyResult<(Vec<u8>, usize)> {
 }
 
 fn parse_float(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     opts: &mut DecodeOptions,
     current_depth: u32,
@@ -374,7 +377,7 @@ fn decode_cached_string(
 }
 
 fn decode(
-    buffer: &Vec<u8>,
+    buffer: &[u8],
     offset: usize,
     opts: &mut DecodeOptions,
     current_depth: u32,
@@ -504,6 +507,35 @@ pub fn unpack(
     let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
     let mut opts = DecodeOptions::new(real_depth);
     let (result, new_offset) = decode(&buffer, offset, &mut opts, 1)?;
+    Ok((result.into_pyobject(py)?, new_offset))
+}
+
+#[cfg(unix)]
+use std::os::fd::FromRawFd;
+#[cfg(windows)]
+use std::os::windows::io::FromRawHandle;
+pub fn unpack_from_file(
+    py: Python<'_>,
+    file_descriptor: i64,
+    offset: usize,
+    max_depth: i32,
+) -> PyResult<(Bound<'_, PyAny>, usize)> {
+    let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
+    let mut opts = DecodeOptions::new(real_depth);
+    let file = unsafe {
+        #[cfg(unix)]
+        {
+            File::from_raw_fd(file_descriptor as std::os::fd::RawFd)
+        }
+        #[cfg(windows)]
+        {
+            File::from_raw_handle(file_descriptor as std::os::windows::io::RawHandle)
+        }
+    };
+    let file = ManuallyDrop::new(file);
+    let mmap = unsafe { Mmap::map(&*file)? };
+    let buffer: &[u8] = &mmap;
+    let (result, new_offset) = decode(buffer, offset, &mut opts, 1)?;
     Ok((result.into_pyobject(py)?, new_offset))
 }
 

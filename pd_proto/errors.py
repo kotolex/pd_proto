@@ -18,6 +18,12 @@ class UnsupportedTypeError(PDProtoError):
     """
 
 
+class BinaryFileError(PDProtoError):
+    """
+    Raised for any issues related to the binary file.
+    """
+
+
 class EmptyDataError(PDProtoError):
     """
     Raised when the input data is empty.

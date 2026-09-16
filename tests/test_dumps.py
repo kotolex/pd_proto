@@ -1,9 +1,11 @@
 import random
+import tempfile
 from datetime import datetime, timezone
+from pathlib import Path
 from unittest import TestCase, main
 
-from pd_proto import encode_float, encode_varint, decode_varint
-from pd_proto.dump import dumps
+from pd_proto import encode_float, encode_varint, decode_varint, loads, BinaryFileError
+from pd_proto.dump import dumps, dump
 from pd_proto.errors import CycleLinksError, UnsupportedTypeError, IntegerOutOfBoundsError
 
 
@@ -109,10 +111,32 @@ class TestDumps(TestCase):
     def test_dumps_raise_on_too_big_int(self):
         with self.assertRaises(IntegerOutOfBoundsError):
             dumps(9_223_372_036_854_775_810)
-            
+
     def test_dumps_raise_on_too_small_int(self):
         with self.assertRaises(IntegerOutOfBoundsError):
             dumps(-9_223_372_036_854_775_810)
+
+    def test_dump_file(self):
+        data = {1: 1, "2": "2", 3: 3.14, 4: [1, 2, 3]}
+        with tempfile.NamedTemporaryFile() as tmp:
+            dump(tmp, data)
+            tmp.seek(0)
+            read_data = tmp.read()
+        self.assertEqual(loads(read_data), data)
+
+    def test_dump_raise_not_a_file(self):
+        with self.assertRaises(BinaryFileError):
+            dump(self, [])
+
+    def test_dump_raise_not_a_binary(self):
+        with self.assertRaises(BinaryFileError):
+            with open(Path(__file__).parent / "compare.py") as file:
+                dump(file, [])
+
+    def test_dump_raise_not_for_write(self):
+        with self.assertRaises(BinaryFileError):
+            with open(Path(__file__).parent / "compare.py", "rb") as file:
+                dump(file, [])
 
 
 if __name__ == '__main__':

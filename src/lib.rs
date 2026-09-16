@@ -11,8 +11,10 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc; // should speed up alloc
 
 #[pymodule]
 mod pd_proto {
-    use crate::dec::{decode_varint as dec_var, unpack as real_unpack};
-    use crate::enc::{encode_float as e_float, encode_varint as var_int, pack as real_pack};
+    use crate::dec::{decode_varint as dec_var, unpack as real_unpack, unpack_from_file};
+    use crate::enc::{
+        encode_float as e_float, encode_varint as var_int, pack as real_pack, pack_to_file,
+    };
     use crate::options::Options;
     use pyo3::prelude::*;
 
@@ -56,6 +58,27 @@ mod pd_proto {
     }
 
     #[pyfunction]
+    fn packf(
+        py: Python<'_>,
+        py_file: Py<PyAny>,
+        data: Bound<PyAny>,
+        protocol_version: u8,
+        max_depth: i32,
+        float_limit: f64,
+        string_length_limit: i32,
+    ) -> PyResult<()> {
+        pack_to_file(
+            py,
+            py_file,
+            data,
+            protocol_version,
+            max_depth,
+            string_length_limit,
+            float_limit,
+        )
+    }
+
+    #[pyfunction]
     fn unpack(
         py: Python<'_>,
         buffer: Vec<u8>,
@@ -63,5 +86,15 @@ mod pd_proto {
         max_depth: i32,
     ) -> PyResult<(Bound<'_, PyAny>, usize)> {
         real_unpack(py, buffer, offset, max_depth)
+    }
+
+    #[pyfunction]
+    fn unpackf(
+        py: Python<'_>,
+        fd: i64,
+        offset: usize,
+        max_depth: i32,
+    ) -> PyResult<(Bound<'_, PyAny>, usize)> {
+        unpack_from_file(py, fd, offset, max_depth)
     }
 }

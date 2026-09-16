@@ -95,6 +95,27 @@ except PDProtoError:
 ```
 **Note on frozenset:** Despite being a built-in type, `frozenset` is seldom used and is identical to a standard `set` from a data perspective (ignoring behavior). If you need to serialize it, just use a regular `set`.
 
+### Files
+
+The library works with file-like objects exactly like the standard `pickle` and `json` modules. Simply use the standard `dump()` and `load()` methods.
+
+* **Efficient Buffered I/O:** All operations utilize highly efficient buffered streaming under the hood.
+* **Important for Reading:** The `load()` method requires a **real file present in the filesystem** (with a valid OS descriptor/handle) to enable zero-copy memory mapping. In-memory streams like `io.BytesIO` or network sockets are not supported for reading for now.
+
+```python
+from pd_proto import dump, load
+
+data = {1: 1, "2": "2", 3: 3.14, 4: [1, 2, 3]}
+# Note: The file must be opened in binary mode ('b') since the library works with bytes, not text.
+with open("data.bin", "wb") as file_to_write:
+    dump(file_to_write, data)  # Serializes the object and writes it directly to the file.
+
+with open("data.bin", "rb") as file_to_read:
+    parsed = load(file_to_read) # Deserializes the object from the file.
+
+assert data == parsed  # The protocol guarantees full equality after deserialization.
+```
+
 ## Comparison with JSON
 
 The primary benefit of JSON over `pd_proto` is human-readability. Otherwise, JSON produces larger payloads and performs slower.

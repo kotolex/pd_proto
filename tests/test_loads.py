@@ -1,10 +1,14 @@
+import tempfile
+import zoneinfo
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from unittest import TestCase, main
 
-from pd_proto.load import loads
+from pd_proto.load import loads, load
 from pd_proto.dump import dumps
 from pd_proto.errors import (BytesLeftError, ParseFloatError, DataCorruptionError,
                              ParseStringError, EmptyDataError,
-                             ProtocolError)
+                             ProtocolError, BinaryFileError)
 
 
 class TestLoads(TestCase):
@@ -62,8 +66,10 @@ class TestLoads(TestCase):
             (['1', [], '2', ['1'], '3'], b'\x01\x0e\x05\r\x011\x05\r\x012\x0e\x01\r\x011\r\x013'),
             ([1.23, 0.0, 3.14], b'\x01\x0e\x03\x0c?\xf3\xae\x14z\xe1G\xae\x03\x0c@\t\x1e\xb8Q\xeb\x85\x1f'),
             ([None, False, True, [], 0, 0.0, ''], b'\x01\x0e\x07\x00\x02\x01\x05\t\x03\x04'),
-            ([(1, 2), 3, {'4', '5'}, 6.789], b"\x01\x0e\x04\x0f\x02\n\x01\n\x02\n\x03\x10\x02\r\x014\r\x015\x0c@\x1b'\xef\x9d\xb2-\x0e"),
-            ([100, 10.1, [100, 10.1, [100, 10.1]]], b'\x01\x0e\x03\nd\x0c@$333333\x0e\x03\nd\x0c@$333333\x0e\x02\nd\x0c@$333333'),
+            ([(1, 2), 3, {'4', '5'}, 6.789],
+             b"\x01\x0e\x04\x0f\x02\n\x01\n\x02\n\x03\x10\x02\r\x014\r\x015\x0c@\x1b'\xef\x9d\xb2-\x0e"),
+            ([100, 10.1, [100, 10.1, [100, 10.1]]],
+             b'\x01\x0e\x03\nd\x0c@$333333\x0e\x03\nd\x0c@$333333\x0e\x02\nd\x0c@$333333'),
         )
         for expected, arg in params:
             with self.subTest(f"loads_list({arg})"):
@@ -86,7 +92,6 @@ class TestLoads(TestCase):
         for expected, arg in params:
             with self.subTest(f"loads_list({arg})"):
                 self.assertEqual(expected, loads(arg))
-
 
     def test_loads_set(self):
         params = (
@@ -112,7 +117,7 @@ class TestLoads(TestCase):
 
     def test_loads_fail_varint(self):
         with self.assertRaises(DataCorruptionError):
-            loads(b'\x01\n' + b'\x80'*20)
+            loads(b'\x01\n' + b'\x80' * 20)
 
     def test_loads_fail_no_cache_index(self):
         with self.assertRaises(DataCorruptionError):
@@ -133,6 +138,55 @@ class TestLoads(TestCase):
     def test_loads_fail_no_elements_for_list(self):
         with self.assertRaises(DataCorruptionError):
             loads(b'\x01S\x13')
+
+    def test_load_raise_not_for_read(self):
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(b"123")
+            tmp.flush()
+            temp_path = tmp.name
+        with self.assertRaises(BinaryFileError):
+            with open(temp_path, "wb") as file_to_read:
+                load(file_to_read)
+
+    def test_load_raise_text_mode(self):
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(b"123")
+            tmp.flush()
+            temp_path = tmp.name
+        with self.assertRaises(BinaryFileError):
+            with open(temp_path, "rt") as file_to_read:
+                load(file_to_read)
+
+    def test_load_raise_not_a_real_file(self):
+        class NotAFile:
+            def read(self, n):
+                pass
+
+        with self.assertRaises(BinaryFileError):
+            nf = NotAFile()
+            nf.readable = lambda: True
+            load(nf)
+
+    def test_load(self):
+        expected = {'boolean_false': False,
+                    'boolean_true': True,
+                    'bytes_data': b'\x00\x01\x02\x03',
+                    'datetime_aware': datetime(2026, 9, 8, 21, 12,
+                                               tzinfo=zoneinfo.ZoneInfo(key='Europe/Moscow')),
+                    'datetime_offset': datetime(2026, 9, 8, 21, 12,
+                                                tzinfo=timezone(timedelta(seconds=7200))),
+                    'float_coords': (55.7558, 37.6173),
+                    'integer': 42,
+                    'list_of_ints': [-1234124, 0, 123, 999, 123321445],
+                    'nested_dict': {'key': -3.14},
+                    'none_value': None,
+                    'text': 'Тестовая строка UTF-8',
+                    'unique_tags': {'banana', 'apple', 'cherry'}}
+        fl = Path(__file__).parent / "first.raw"
+        with open(fl, "rb") as file:
+            data = load(file)
+        for k,v in data.items():
+            self.assertEqual(expected[k], v)
 
 
 if __name__ == '__main__':

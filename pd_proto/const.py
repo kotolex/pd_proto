@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import IntEnum
-from typing import Union
+from typing import Any, Protocol, Union
 
 PROTOCOL_VERSION = 1
 FLOAT_LIMIT = 268_435_455.0  # The default threshold for float optimization
@@ -9,8 +9,44 @@ DEPTH_LIMIT = 1000  # The default threshold for nesting
 MIN_INT = -9_223_372_036_854_775_808  # minimal bound for ints in protocol
 MAX_INT = 9_223_372_036_854_775_807  # maximum bound for ints in protocol
 
+ENCODING = "encoding"  # This attribute is only present on files opened in text mode
+WRITABLE = "writable"  # A required attribute indicating that the file is writable
+READABLE = "readable"  # A required attribute indicating that the file is readable
+FILENO = "fileno"  # A required attribute indicating that the file exists in the filesystem
+
 SupportedTypes = Union[None, bool, int, float, str, bytes, list, tuple, dict, set, datetime]
 SupportedCollections = Union[list, tuple, dict, set]
+
+
+class SupportsWrite(Protocol):
+    """
+    A structural type (Protocol) for file-like objects that support writing binary data
+    """
+
+    def write(self, __s: bytes) -> Any:
+        """
+        Write the given bytes chunk to the file buffer or stream efficiently.
+        :param __s: bytes to write
+        :return: any result
+        """
+
+
+class SupportsRead(Protocol):
+    """
+    A structural type (Protocol) for file-like objects that support buffered binary reading.
+    """
+
+    def read(self, __n: int = -1) -> bytes:
+        """
+        Read up to n bytes from the file buffer or stream efficiently.
+        :return: The binary data chunk read from the file.
+        """
+
+    def fileno(self) -> int:
+        """
+        Returns file descriptor
+        :return: The file descriptor
+        """
 
 
 class Variant(IntEnum):
