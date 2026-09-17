@@ -1,5 +1,5 @@
 from pd_proto import SupportedTypes
-from pd_proto.const import SupportsRead, SupportsWrite
+from pd_proto.const import SupportsWrite
 
 def encode_varint(number: int) -> bytearray:
     """
@@ -98,3 +98,23 @@ def unpackf(file_descriptor: int, offset: int, max_depth: int) -> tuple[Supporte
     :raises ValueError: If no data can be decoded, not all bytes were parsed, or the data is corrupted.
     """
     ...
+
+def checksum(bts:bytes) -> int:
+    """
+    Calculates the Adler-32 checksum of the provided byte data. Written in Rust.
+
+    :param bts: The input binary data to be checksummed.
+    :return: An integer representing the calculated checksum.
+    """
+    ...
+
+def checksum_file(file_descriptor: int) -> int:
+    """
+    Calculates the Adler-32 checksum of the provided binary file. Written in Rust.
+
+    :param file_descriptor: A file_descriptor of real file opened to read bytes.
+    :return: An integer representing the calculated checksum.
+    """
+    ...
+
+

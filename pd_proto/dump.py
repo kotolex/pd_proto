@@ -1,4 +1,4 @@
-from pd_proto import pack, packf
+from pd_proto import _pack, _packf
 from pd_proto.const import (DEPTH_LIMIT, ENCODING, FLOAT_LIMIT, MAX_INT,
                             MIN_INT, PROTOCOL_VERSION, STRING_LIMIT, WRITABLE,
                             SupportedTypes, SupportsWrite)
@@ -8,7 +8,7 @@ from pd_proto.errors import (BinaryFileError, CycleLinksError,
 
 
 def _dump(use_file: bool, *args):
-    action = packf if use_file else pack
+    action = _packf if use_file else _pack
     try:
         result = action(*args)
     except AttributeError as e:

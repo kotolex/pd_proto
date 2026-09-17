@@ -1,7 +1,7 @@
 use crate::constants::*;
 use crate::options::Options;
 use crate::utils::{compress, dec_places};
-use pyo3::exceptions::{PyAttributeError, PyValueError};
+use pyo3::exceptions::{PyAttributeError, PyOverflowError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{
     PyAnyMethods, PyBytes, PyDateTime, PyDelta, PyDeltaAccess, PyNone, PySet, PyString,
@@ -229,6 +229,9 @@ fn encode<W: Write>(
         encode_datetime(py, val, buffer, opts)?;
     } else if py_type.is(py.get_type::<PyInt>()) {
         let val: i64 = item.extract()?;
+        if val == i64::MIN {
+            return Err(PyOverflowError::new_err("[MIN] Integer is out of bounds"));
+        }
         encode_int(val, buffer, opts);
     } else if py_type.is(py.get_type::<PyFloat>()) {
         let val: f64 = item.extract()?;

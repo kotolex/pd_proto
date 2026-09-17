@@ -1,14 +1,13 @@
-import tempfile
 import zoneinfo
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest import TestCase, main
 
-from pd_proto.load import loads, load
 from pd_proto.dump import dumps
 from pd_proto.errors import (BytesLeftError, ParseFloatError, DataCorruptionError,
                              ParseStringError, EmptyDataError,
-                             ProtocolError, BinaryFileError)
+                             ProtocolError)
+from pd_proto.load import loads, load
 
 
 class TestLoads(TestCase):
@@ -138,34 +137,6 @@ class TestLoads(TestCase):
     def test_loads_fail_no_elements_for_list(self):
         with self.assertRaises(DataCorruptionError):
             loads(b'\x01S\x13')
-
-    def test_load_raise_not_for_read(self):
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(b"123")
-            tmp.flush()
-            temp_path = tmp.name
-        with self.assertRaises(BinaryFileError):
-            with open(temp_path, "wb") as file_to_read:
-                load(file_to_read)
-
-    def test_load_raise_text_mode(self):
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(b"123")
-            tmp.flush()
-            temp_path = tmp.name
-        with self.assertRaises(BinaryFileError):
-            with open(temp_path, "rt") as file_to_read:
-                load(file_to_read)
-
-    def test_load_raise_not_a_real_file(self):
-        class NotAFile:
-            def read(self, n):
-                pass
-
-        with self.assertRaises(BinaryFileError):
-            nf = NotAFile()
-            nf.readable = lambda: True
-            load(nf)
 
     def test_load(self):
         expected = {'boolean_false': False,

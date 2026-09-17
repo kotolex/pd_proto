@@ -37,7 +37,7 @@ class TestDumps(TestCase):
             (b'\x01\x12', b''),
             (b'\x01\t', 0),
             (b'\x01\x0bd', -100),
-            (b'\x01\x0b\x80\x80\x80\x80\x80\x80\x80\x80\x80\x01', -9223372036854775808),
+            (b'\x01\x0b\xff\xff\xff\xff\xff\xff\xff\xff\x7f', -9223372036854775807),
             (b'\x01\n\xff\xff\xff\xff\xff\xff\xff\xff\x7f', 9_223_372_036_854_775_807),
             (b'\x01\x16\x80\x02', 2.56),
             (b'\x01 \x80\x02', -2.56),

@@ -1,5 +1,19 @@
 # Release Notes
 
+## 2026-09-17 (Version 1.1.0)
+
+### Added
+* **Checksum Support (`checksum` and `checksums`):** Introduced support for working with adler32 checksum.
+
+### Changed
+* **Internal architecture:** Make internal functions private to clarify public interface
+* **Internal architecture:** Decrease default nesting limit to 500
+
+### Fixed
+* **Protocol internal:** Fix bug with big negative integer overflow
+
+
+
 ## 2026-09-16 (Version 1.0.2)
 
 ### Added

@@ -1,13 +1,10 @@
 use crate::constants::{INT_INDEX, LIST_INDEX, TEN, Variant};
 use crate::options::DecodeOptions;
-use crate::utils::decompress;
-use memmap2::Mmap;
+use crate::utils::{bytes_by_file_descriptor, decompress};
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDateTime, PyDelta, PyDict, PySet, PyTuple, PyTzInfo};
-use std::fs::File;
-use std::mem::ManuallyDrop;
 
 const FLOAT_BYTES: usize = 8;
 const EMPTY_VEC: Vec<ParsedData> = Vec::new();
@@ -510,10 +507,6 @@ pub fn unpack(
     Ok((result.into_pyobject(py)?, new_offset))
 }
 
-#[cfg(unix)]
-use std::os::fd::FromRawFd;
-#[cfg(windows)]
-use std::os::windows::io::FromRawHandle;
 pub fn unpack_from_file(
     py: Python<'_>,
     file_descriptor: i64,
@@ -522,18 +515,7 @@ pub fn unpack_from_file(
 ) -> PyResult<(Bound<'_, PyAny>, usize)> {
     let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
     let mut opts = DecodeOptions::new(real_depth);
-    let file = unsafe {
-        #[cfg(unix)]
-        {
-            File::from_raw_fd(file_descriptor as std::os::fd::RawFd)
-        }
-        #[cfg(windows)]
-        {
-            File::from_raw_handle(file_descriptor as std::os::windows::io::RawHandle)
-        }
-    };
-    let file = ManuallyDrop::new(file);
-    let mmap = unsafe { Mmap::map(&*file)? };
+    let mmap = bytes_by_file_descriptor(file_descriptor)?;
     let buffer: &[u8] = &mmap;
     let (result, new_offset) = decode(buffer, offset, &mut opts, 1)?;
     Ok((result.into_pyobject(py)?, new_offset))

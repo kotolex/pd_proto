@@ -1,13 +1,13 @@
 import os
-import sys
 
-from pd_proto import unpack, unpackf
-from pd_proto.const import (DEPTH_LIMIT, ENCODING, FILENO, PROTOCOL_VERSION,
-                            READABLE, SupportedTypes, SupportsRead)
-from pd_proto.errors import (BinaryFileError, BytesLeftError, CycleLinksError,
+from pd_proto import _unpack, _unpackf
+from pd_proto.const import (DEPTH_LIMIT, PROTOCOL_VERSION,
+                            SupportedTypes, SupportsRead)
+from pd_proto.errors import (BytesLeftError, CycleLinksError,
                              DataCorruptionError, EmptyDataError,
                              ParseFloatError, ParseStringError, PDProtoError,
                              ProtocolError, WrongTagError)
+from pd_proto.utils import check_binary_file_for_reading, get_sys_handle
 
 BYTES = "[BYTES]"
 CACHE = "[CACHE]"
@@ -29,22 +29,8 @@ ERROR_MAPPING = {
 }
 
 
-def get_sys_handle(file) -> int:
-    """
-    Get the OS file descriptor or handle.
-
-    :param file: A real file-like object present in the filesystem.
-    :return: The system descriptor or handle as an integer.
-    """
-    fd = file.fileno()
-    if sys.platform == "win32":
-        import msvcrt  # pylint: disable=import-outside-toplevel
-        return msvcrt.get_osfhandle(fd)
-    return fd
-
-
 def _load(use_file: bool, length, *args):
-    action = unpackf if use_file else unpack
+    action = _unpackf if use_file else _unpack
     try:
         result, offset = action(*args)
     except ValueError as e:
@@ -95,12 +81,7 @@ def load(file: SupportsRead, max_depth: int = DEPTH_LIMIT) -> SupportedTypes:
     :raises BinaryFileError: if it is not a real file, file is not readable, or opened for read text
     :raises PDProtoError: For any other error in the Rust backend.
     """
-    if not getattr(file, READABLE, lambda: False)():
-        raise BinaryFileError("The 'file' parameter must be real file opened for reading bytes.")
-    if not hasattr(file, FILENO):
-        raise BinaryFileError("Expected a real file on disk, not an in-memory stream.")
-    if hasattr(file, ENCODING):
-        raise BinaryFileError("Param 'file' must be a binary file opened for reading (unexpected 'encoding' attribute)")
+    check_binary_file_for_reading(file)
     fd = get_sys_handle(file)
     file_size = os.fstat(file.fileno()).st_size
     if file_size <= 2:

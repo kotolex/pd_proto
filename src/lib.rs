@@ -16,7 +16,18 @@ mod pd_proto {
         encode_float as e_float, encode_varint as var_int, pack as real_pack, pack_to_file,
     };
     use crate::options::Options;
+    use crate::utils::{adler, adlers};
     use pyo3::prelude::*;
+
+    #[pyfunction]
+    fn checksum(bts: &[u8]) -> u32 {
+        adlers(bts)
+    }
+
+    #[pyfunction]
+    fn checksum_file(fd: i64) -> PyResult<u32> {
+        adler(fd)
+    }
 
     #[pyfunction]
     fn decode_varint(buffer: Vec<u8>, offset: usize) -> PyResult<(u64, usize)> {
