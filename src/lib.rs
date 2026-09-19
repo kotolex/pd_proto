@@ -3,6 +3,7 @@ mod dec;
 mod enc;
 mod options;
 mod utils;
+mod shadow;
 
 use pyo3::prelude::*;
 

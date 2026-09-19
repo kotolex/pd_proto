@@ -1,4 +1,4 @@
-use crate::constants::{INT_INDEX, LIST_INDEX, TEN, Variant};
+use crate::constants::{Variant, FLOAT_BYTES, INT_INDEX, LIST_INDEX, TEN};
 use crate::options::DecodeOptions;
 use crate::utils::{bytes_by_file_descriptor, decompress};
 use pyo3::IntoPyObjectExt;
@@ -6,9 +6,8 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDateTime, PyDelta, PyDict, PySet, PyTuple, PyTzInfo};
 
-const FLOAT_BYTES: usize = 8;
-const EMPTY_VEC: Vec<ParsedData> = Vec::new();
-const EMPTY_DICT: Vec<(ParsedData, ParsedData)> = Vec::new();
+pub const EMPTY_VEC: Vec<ParsedData> = Vec::new();
+pub const EMPTY_DICT: Vec<(ParsedData, ParsedData)> = Vec::new();
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParsedData {
@@ -143,7 +142,7 @@ fn decode_optimized_float(buffer: &[u8], offset: usize, tag: Variant) -> PyResul
     }
 }
 
-fn decode_optimized_int(tag: Variant) -> i64 {
+pub fn decode_optimized_int(tag: Variant) -> i64 {
     if tag <= Variant::Int13 && tag >= Variant::Int1 {
         return tag as i64 - INT_INDEX as i64;
     }

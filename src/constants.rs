@@ -11,6 +11,7 @@ pub const TEN: u64 = 10;
 pub const DEFAULT_CACHE_CAPACITY: usize = 20;
 pub const DEFAULT_CACHE_STRING_LIMIT: usize = 250;
 pub const DEFAULT_INT_LIMIT: i64 = 16384;
+pub const FLOAT_BYTES: usize = 8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
