@@ -243,7 +243,7 @@ Parsing stopped at offset 2
         with tempfile.NamedTemporaryFile() as tmp:
             dump(tmp, data)
             tmp.seek(0)
-            with open("some.txt", "wt", encoding="utf-8") as tmp2:
+            with open(Path(__file__).parent / "some.txt", "wt", encoding="utf-8") as tmp2:
                 explain(tmp, tmp2)
             read_data = (Path(__file__).parent / "some.txt").read_text()
         self.assertEqual(read_data, expected)
