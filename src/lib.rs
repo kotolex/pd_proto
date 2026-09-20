@@ -2,8 +2,8 @@ mod constants;
 mod dec;
 mod enc;
 mod options;
-mod utils;
 mod shadow;
+mod utils;
 
 use pyo3::prelude::*;
 
@@ -17,6 +17,7 @@ mod pd_proto {
         encode_float as e_float, encode_varint as var_int, pack as real_pack, pack_to_file,
     };
     use crate::options::Options;
+    use crate::shadow::explains as ex_s;
     use crate::utils::{adler, adlers};
     use pyo3::prelude::*;
 
@@ -108,5 +109,10 @@ mod pd_proto {
         max_depth: i32,
     ) -> PyResult<(Bound<'_, PyAny>, usize)> {
         unpack_from_file(py, fd, offset, max_depth)
+    }
+
+    #[pyfunction]
+    fn explains(buffer: Vec<u8>, offset: usize, max_depth: i32) -> PyResult<String> {
+        ex_s(buffer, offset, max_depth)
     }
 }

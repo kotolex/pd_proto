@@ -58,6 +58,12 @@ class TestLoads(TestCase):
         with self.assertRaises(BytesLeftError):
             loads(b'\x01\x010101')
 
+    def test_load_fail_on_corrupt_data(self):
+        fl = Path(__file__).parent / "unparsed.bin"
+        with self.assertRaises(BytesLeftError):
+            with open(fl, "rb") as file:
+                load(file)
+
     def test_loads_list_full(self):
         params = (
             ([1, -1, 0, 1], b'\x01\x0e\x04\n\x01\x0b\x01\t\n\x01'),

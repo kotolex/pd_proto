@@ -117,4 +117,17 @@ def checksum_file(file_descriptor: int) -> int:
     """
     ...
 
+def explains(bts: bytes, offset: int, max_depth: int) -> str:
+    """
+    This function provides a detailed step-by-step data unpacking algorithm.
+    It deserializes the provided bytes and returns a comprehensive report as a string, while discarding the actual
+    unpacked result. This Rust-implemented function is designed specifically for data and protocol debugging.
+
+    :param bts: A bytes representation of an object.
+    :param offset: The byte index to start reading from.
+    :param max_depth: Maximum nesting depth for collections; raises an error if exceeded.
+                      Set to 0 to disable this check (warning: can lead to errors).
+    :return: Detailed report as a string.
+    """
+    ...
 

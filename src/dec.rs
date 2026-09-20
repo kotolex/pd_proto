@@ -1,4 +1,4 @@
-use crate::constants::{Variant, FLOAT_BYTES, INT_INDEX, LIST_INDEX, TEN};
+use crate::constants::{FLOAT_BYTES, INT_INDEX, LIST_INDEX, TEN, Variant};
 use crate::options::DecodeOptions;
 use crate::utils::{bytes_by_file_descriptor, decompress};
 use pyo3::IntoPyObjectExt;
@@ -159,25 +159,25 @@ pub fn decode_optimized_int(tag: Variant) -> i64 {
 fn decode_string(buffer: &[u8], offset: usize, tag: Variant) -> PyResult<(String, usize)> {
     let last_index;
     let mut new_offset = offset;
-    let (value, read) = decode_varint(buffer, offset)?;
     if tag == Variant::String || tag == Variant::StringCompressed {
+        let (value, read) = decode_varint(buffer, offset)?;
         last_index = read + (value as usize) + offset;
+        new_offset = offset + read;
         if buffer.len() < last_index - 1 {
             let e_m = format!(
                 "[STRING] Not enough bytes, need {}, but have only {} bytes left at offset {}",
                 value,
-                buffer.len() - offset,
-                offset
+                buffer.len() - new_offset,
+                new_offset
             );
             return Err(PyValueError::new_err(e_m));
         }
-        new_offset = offset + read;
     } else {
         last_index = (tag as u8 - 40) as usize + offset; // cause STRING_1=41 etc.
         if buffer.len() < last_index {
             let e_m = format!(
                 "[STRING] Not enough bytes, need {}, but have only {} bytes left",
-                value,
+                last_index,
                 buffer.len() - offset
             );
             return Err(PyValueError::new_err(e_m));
@@ -281,9 +281,9 @@ fn decode_bytes(buffer: &[u8], offset: usize) -> PyResult<(Vec<u8>, usize)> {
     if buffer.len() < last_index {
         let e_m = format!(
             "[BYTES] Not enough bytes, need {}, but have only {} bytes left at offset {}",
-            last_index - offset,
-            buffer.len() - offset,
-            offset
+            last_index - new_offset,
+            buffer.len() - new_offset,
+            new_offset
         );
         return Err(PyValueError::new_err(e_m));
     }
@@ -503,6 +503,16 @@ pub fn unpack(
     let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
     let mut opts = DecodeOptions::new(real_depth);
     let (result, new_offset) = decode(&buffer, offset, &mut opts, 1)?;
+    let length = buffer.len();
+    if new_offset < length {
+        let e_m = format!(
+            "[UNPARSED] Corrupt data, finished at offset {}, but still have {} bytes unparsed, total data length {}\n",
+            new_offset,
+            length - new_offset,
+            length
+        );
+        return Err(PyValueError::new_err(e_m));
+    }
     Ok((result.into_pyobject(py)?, new_offset))
 }
 
@@ -517,6 +527,16 @@ pub fn unpack_from_file(
     let mmap = bytes_by_file_descriptor(file_descriptor)?;
     let buffer: &[u8] = &mmap;
     let (result, new_offset) = decode(buffer, offset, &mut opts, 1)?;
+    let length = buffer.len();
+    if new_offset < length {
+        let e_m = format!(
+            "[UNPARSED] Corrupt data, finished at offset {}, but still have {} bytes unparsed, total data length {}\n",
+            new_offset,
+            length - new_offset,
+            length
+        );
+        return Err(PyValueError::new_err(e_m));
+    }
     Ok((result.into_pyobject(py)?, new_offset))
 }
 

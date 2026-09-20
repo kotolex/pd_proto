@@ -6,11 +6,11 @@ use std::convert::TryFrom;
 pub const STRING_INDEX: usize = 40; // cause optimized strings starts with 41
 pub const INT_INDEX: usize = 60; // cause optimized ints starts with 61
 pub const LIST_INDEX: usize = 80; // cause optimized lists starts with 81
-pub const FLOAT_DEFAULT_LIMIT: f64 = 268_435_455.0;
+pub const FLOAT_DEFAULT_LIMIT: f64 = 268_435_455.0; // see Protocol Specification
 pub const TEN: u64 = 10;
 pub const DEFAULT_CACHE_CAPACITY: usize = 20;
 pub const DEFAULT_CACHE_STRING_LIMIT: usize = 250;
-pub const DEFAULT_INT_LIMIT: i64 = 16384;
+pub const DEFAULT_INT_LIMIT: i64 = 16384; // cause smaller ints took less than 3 bytes
 pub const FLOAT_BYTES: usize = 8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
