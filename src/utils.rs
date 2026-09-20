@@ -1,8 +1,43 @@
 use flate2::Compression;
 use flate2::write::ZlibDecoder;
 use flate2::write::ZlibEncoder;
-
+use memmap2::Mmap;
+use pyo3::PyResult;
+use simd_adler32::Adler32;
+use std::fs::File;
 use std::io::Write;
+use std::mem::ManuallyDrop;
+
+#[cfg(unix)]
+use std::os::fd::FromRawFd;
+#[cfg(windows)]
+use std::os::windows::io::FromRawHandle;
+pub fn bytes_by_file_descriptor(file_descriptor: i64) -> PyResult<Mmap> {
+    let file = unsafe {
+        #[cfg(unix)]
+        {
+            File::from_raw_fd(file_descriptor as std::os::fd::RawFd)
+        }
+        #[cfg(windows)]
+        {
+            File::from_raw_handle(file_descriptor as std::os::windows::io::RawHandle)
+        }
+    };
+    let file = ManuallyDrop::new(file);
+    let mmap = unsafe { Mmap::map(&*file)? };
+    Ok(mmap)
+}
+
+pub fn adlers(bytes: &[u8]) -> u32 {
+    let mut adler = Adler32::new();
+    adler.write(bytes);
+    adler.finish()
+}
+pub fn adler(file_descriptor: i64) -> PyResult<u32> {
+    let mm = bytes_by_file_descriptor(file_descriptor)?;
+    let bts: &[u8] = &mm;
+    Ok(adlers(bts))
+}
 
 pub fn compress(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::default());
@@ -42,5 +77,10 @@ mod tests {
         assert_eq!(dec_places(12.123000), 3);
         assert_eq!(dec_places(3.14), 2);
         assert_eq!(dec_places(512.1432456), 7);
+    }
+
+    #[test]
+    fn test_adler() {
+        assert_eq!(adlers(&[1, 2, 3]), 851975);
     }
 }

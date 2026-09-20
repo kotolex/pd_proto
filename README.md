@@ -74,7 +74,7 @@ You can use any supported (built-in) types and collections composed of supported
 
 You can configure certain serialization parameters to boost speed at the cost of the resulting byte array size. Since optimal defaults are already selected, tweaking these settings is generally not recommended.
 
-**max_depth** - Specifies the maximum allowed nesting depth for collections, throwing an exception if exceeded. Defaults to 1000. Setting it to a negative value or 0 disables the depth check, which may lead to stack overflow and application crashes.
+**max_depth** - Specifies the maximum allowed nesting depth for collections, throwing an exception if exceeded. Defaults to 500. Setting it to a negative value or 0 disables the depth check, which may lead to stack overflow and application crashes.
 
 **float_limit** - Specifies the threshold for float optimization. For details on how this optimization works, refer to the protocol specification. Defaults to 268_435_455.0. If set to a negative value or 0, no attempts will be made to optimize float sizes. This may boost performance but expands the result size since every float takes up 8 bytes.
 
@@ -115,6 +115,66 @@ with open("data.bin", "rb") as file_to_read:
 
 assert data == parsed  # The protocol guarantees full equality after deserialization.
 ```
+
+### Checksum Utilities
+
+For data integrity verification, pd_proto provides highly optimized functions: `checksums` (for byte strings) and `checksum` (for binary files).
+
+* **High Performance**: Powered by the Adler-32 algorithm under the hood, making it significantly faster than traditional CRC32.
+* **Memory Efficient**: The file-based checksum function natively supports buffered reading, allowing you to process massive files without loading them entirely into RAM.
+
+```python
+from pd_proto import dump, dumps, checksum, checksums
+
+data = {1: 1, "2": "2", 3: 3.14, 4: [1, 2, 3]}
+first_sum = checksums(dumps(data)) # 444138351
+
+# Note: The file must be opened in binary mode ('b') since the library works with bytes, not text.
+with open("data.bin", "wb") as file_to_write:
+    dump(file_to_write, data)  # Serializes the object and writes it directly to the file.
+
+with open("data.bin", "rb") as file_to_read:
+    second_sum = checksum(file_to_read)
+
+assert first_sum == second_sum 
+```
+
+### Debugging & Protocol Examination (`explain`)
+
+For debugging and a deeper understanding of the protocol, the library provides two convenient utility functions:
+
+* `explains(bytes)`: Accepts a byte string and returns the parsed report as a standard string.
+* `explain(binary_file, text_file)`: Processes a binary file and writes the generated report directly to a text file.
+
+Both functions generate a highly detailed, step-by-step parsing log while discarding the actual unpacked data structures. 
+
+> **Note:** These utilities are specifically designed for comprehensive protocol analysis and educational purposes. They prioritize diagnostic depth over execution speed and are not intended for performance-critical production paths.
+
+```python
+from pd_proto import dumps, explains
+
+data = []
+bts = dumps(data)  # b'\x01\x05'
+
+print(explains(bts))
+# Parsing started at offset 1, total length 2
+# -------------- [Offset 1] [Tag 5 / 0x5] [Nesting level 1]---------------
+# Empty list [] parsed.
+# Parsing stopped at offset 2
+```
+
+When you have a lot of data to explain:
+
+```python
+from pd_proto import explain
+
+# Note: The source file must be opened in binary mode ('b') for reading
+with open("some_big_data.bin", "rb") as src: 
+    # Note: The destination file must be opened in text mode ('t') for writing
+    with open("explain_parsing.txt", "wt", encoding="utf-8") as dst:
+        explain(src, dst)
+```
+
 
 ## Comparison with JSON
 

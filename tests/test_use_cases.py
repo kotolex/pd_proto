@@ -43,7 +43,7 @@ class TestUseCases(TestCase):
             [{1: 1, 2: 2}, {3: {4: 4}}],
             [(ascii_letters + digits) * 3, 1234567890],
             9_223_372_036_854_775_807,
-            -9_223_372_036_854_775_808,
+            -9_223_372_036_854_775_807,
         )
         for param in params:
             with self.subTest(f"test decrypt=encrypt ({param})"):
@@ -199,6 +199,8 @@ class TestUseCases(TestCase):
             tmp.seek(0)
             read_data = load(tmp)
         self.assertEqual(read_data, data)
+
+
 
 
 if __name__ == '__main__':

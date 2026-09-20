@@ -5,8 +5,8 @@ from typing import Any, Protocol, Union
 PROTOCOL_VERSION = 1
 FLOAT_LIMIT = 268_435_455.0  # The default threshold for float optimization
 STRING_LIMIT = 100  # The default threshold for string compression
-DEPTH_LIMIT = 1000  # The default threshold for nesting
-MIN_INT = -9_223_372_036_854_775_808  # minimal bound for ints in protocol
+DEPTH_LIMIT = 500  # The default threshold for nesting
+MIN_INT = -9_223_372_036_854_775_807  # minimal bound for ints in protocol
 MAX_INT = 9_223_372_036_854_775_807  # maximum bound for ints in protocol
 
 ENCODING = "encoding"  # This attribute is only present on files opened in text mode
@@ -27,6 +27,18 @@ class SupportsWrite(Protocol):
         """
         Write the given bytes chunk to the file buffer or stream efficiently.
         :param __s: bytes to write
+        :return: any result
+        """
+
+class SupportsWriteText(Protocol):
+    """
+    A structural type (Protocol) for file-like objects that support writing text data
+    """
+
+    def write(self, __s: str) -> Any:
+        """
+        Write the given string to the file buffer or stream efficiently.
+        :param __s: string to write
         :return: any result
         """
 

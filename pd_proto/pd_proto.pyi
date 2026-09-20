@@ -1,5 +1,5 @@
-from pd_proto import SupportedTypes
-from pd_proto.const import SupportsRead, SupportsWrite
+from pd_proto.const import SupportsWrite, SupportsWriteText, SupportedTypes
+
 
 def encode_varint(number: int) -> bytearray:
     """
@@ -86,6 +86,7 @@ def unpack(bts: bytes, offset: int, max_depth: int) -> tuple[SupportedTypes, int
     """
     ...
 
+
 def unpackf(file_descriptor: int, offset: int, max_depth: int) -> tuple[SupportedTypes, int]:
     """
     Decodes bytes from binary file into an object of a supported type. Written in Rust.
@@ -96,5 +97,56 @@ def unpackf(file_descriptor: int, offset: int, max_depth: int) -> tuple[Supporte
     :param offset: The byte index to start reading from.
     :return: A tuple containing the decoded object and the new offset value.
     :raises ValueError: If no data can be decoded, not all bytes were parsed, or the data is corrupted.
+    """
+    ...
+
+
+def checksum(bts: bytes) -> int:
+    """
+    Calculates the Adler-32 checksum of the provided byte data. Written in Rust.
+
+    :param bts: The input binary data to be checksummed.
+    :return: An integer representing the calculated checksum.
+    """
+    ...
+
+
+def checksum_file(file_descriptor: int) -> int:
+    """
+    Calculates the Adler-32 checksum of the provided binary file. Written in Rust.
+
+    :param file_descriptor: A file_descriptor of real file opened to read bytes.
+    :return: An integer representing the calculated checksum.
+    """
+    ...
+
+
+def explains(bts: bytes, offset: int, max_depth: int) -> str:
+    """
+    This function provides a detailed step-by-step data unpacking algorithm.
+    It deserializes the provided bytes and returns a comprehensive report as a string, while discarding the actual
+    unpacked result. This Rust-implemented function is designed specifically for data and protocol debugging.
+
+    :param bts: A bytes representation of an object.
+    :param offset: The byte index to start reading from.
+    :param max_depth: Maximum nesting depth for collections; raises an error if exceeded.
+                      Set to 0 to disable this check (warning: can lead to errors).
+    :return: Detailed report as a string.
+    """
+    ...
+
+
+def explain(file_descriptor: int, file_dst: SupportsWriteText, offset: int, max_depth: int) -> None:
+    """
+    This function implements a detailed step-by-step data unpacking algorithm.
+    It deserializes the provided bytes and writes them to the specified text file, while discarding the
+    actual unpacked result.
+    This Rust-implemented function is designed specifically for data and protocol debugging.
+
+    :param file_descriptor: A file_descriptor of real file opened to read bytes.
+    :param file_dst: A file-like object opened for writing text in UTF-8.
+    :param offset: The byte index to start reading from.
+    :param max_depth: Maximum nesting depth for collections; raises an error if exceeded.
+                      Set to 0 to disable this check (warning: can lead to errors).
     """
     ...

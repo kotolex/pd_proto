@@ -85,7 +85,7 @@ Note: An asterisk * indicates a variable size dependent on the payload (e.g., st
 | `{}` (dict)                           |      `8`      |      1       | Represents empty dict                                                                                            |
 | `0` (int)                             |      `9`      |      1       | Represents integer 0                                                                                             |
 | positive integer                      |     `10`      |     1-8      | Represents positive integer (>0), limited by i64 type in Rust (9_223_372_036_854_775_807)                        |
-| negative integer                      |     `11`      |     1-8      | Represents negative integer (<0), limited by i64 type in Rust (-9_223_372_036_854_775_808)                       |
+| negative integer                      |     `11`      |     1-8      | Represents negative integer (<0), limited by i64 type in Rust (-9_223_372_036_854_775_807)                       |
 | float                                 |     `12`      |      8       | Represents float                                                                                                 |
 | string                                |     `13`      |     2-*      | Represents non-empty string, always use UTF-8 encoding                                                           |
 | list                                  |     `14`      |     3-*      | Represents non-empty list                                                                                        |
