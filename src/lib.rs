@@ -17,7 +17,7 @@ mod pd_proto {
         encode_float as e_float, encode_varint as var_int, pack as real_pack, pack_to_file,
     };
     use crate::options::Options;
-    use crate::shadow::explains as ex_s;
+    use crate::shadow::{explain as ex, explains as ex_s};
     use crate::utils::{adler, adlers};
     use pyo3::prelude::*;
 
@@ -114,5 +114,15 @@ mod pd_proto {
     #[pyfunction]
     fn explains(buffer: Vec<u8>, offset: usize, max_depth: i32) -> PyResult<String> {
         ex_s(buffer, offset, max_depth)
+    }
+
+    #[pyfunction]
+    fn explain(
+        file_descriptor: i64,
+        py_file: Py<PyAny>,
+        offset: usize,
+        max_depth: i32,
+    ) -> PyResult<()> {
+        ex(file_descriptor, py_file, offset, max_depth)
     }
 }

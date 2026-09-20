@@ -139,6 +139,43 @@ with open("data.bin", "rb") as file_to_read:
 assert first_sum == second_sum 
 ```
 
+### Debugging & Protocol Examination (`explain`)
+
+For debugging and a deeper understanding of the protocol, the library provides two convenient utility functions:
+
+* `explains(bytes)`: Accepts a byte string and returns the parsed report as a standard string.
+* `explain(binary_file, text_file)`: Processes a binary file and writes the generated report directly to a text file.
+
+Both functions generate a highly detailed, step-by-step parsing log while discarding the actual unpacked data structures. 
+
+> **Note:** These utilities are specifically designed for comprehensive protocol analysis and educational purposes. They prioritize diagnostic depth over execution speed and are not intended for performance-critical production paths.
+
+```python
+from pd_proto import dumps, explains
+
+data = []
+bts = dumps(data)  # b'\x01\x05'
+
+print(explains(bts))
+# Parsing started at offset 1, total length 2
+# -------------- [Offset 1] [Tag 5 / 0x5] [Nesting level 1]---------------
+# Empty list [] parsed.
+# Parsing stopped at offset 2
+```
+
+When you have a lot of data to explain:
+
+```python
+from pd_proto import explain
+
+# Note: The source file must be opened in binary mode ('b') for reading
+with open("some_big_data.bin", "rb") as src: 
+    # Note: The destination file must be opened in text mode ('t') for writing
+    with open("explain_parsing.txt", "wt", encoding="utf-8") as dst:
+        explain(src, dst)
+```
+
+
 ## Comparison with JSON
 
 The primary benefit of JSON over `pd_proto` is human-readability. Otherwise, JSON produces larger payloads and performs slower.

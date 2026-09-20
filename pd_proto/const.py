@@ -30,6 +30,18 @@ class SupportsWrite(Protocol):
         :return: any result
         """
 
+class SupportsWriteText(Protocol):
+    """
+    A structural type (Protocol) for file-like objects that support writing text data
+    """
+
+    def write(self, __s: str) -> Any:
+        """
+        Write the given string to the file buffer or stream efficiently.
+        :param __s: string to write
+        :return: any result
+        """
+
 
 class SupportsRead(Protocol):
     """

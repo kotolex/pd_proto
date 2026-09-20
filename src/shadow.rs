@@ -1,10 +1,11 @@
 use crate::constants::{FLOAT_BYTES, LIST_INDEX, TEN, Variant};
 use crate::dec::{EMPTY_DICT, EMPTY_VEC, ParsedData, decode_optimized_int};
 use crate::options::DecodeOptions;
-use crate::utils::decompress;
+use crate::utils::{bytes_by_file_descriptor, decompress};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use std::io::Write;
+use pyo3_file::PyFileLikeObject;
+use std::io::{BufWriter, Write};
 
 fn get_tabs(current_depth:u32) -> String {
     let tab_count= if current_depth > 10 {10} else {current_depth - 1};
@@ -630,18 +631,11 @@ fn decode<W: Write>(
     }
 }
 
-pub fn explains(
-    buffer: Vec<u8>,
-    offset: usize,
-    max_depth: i32,
-) -> PyResult<String> {
-    let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
-    let mut opts = DecodeOptions::new(real_depth);
-    let mut result: Vec<u8> = Vec::new();
+fn _explain<W: Write>(buffer: &[u8],  offset: usize, opts: &mut DecodeOptions, result: &mut W) -> PyResult<()>  {
     let length = buffer.len();
     let e_m = format!("Parsing started at offset {}, total length {}\n", offset, length);
     result.write_all(e_m.as_bytes())?;
-    match decode(&buffer, offset, &mut opts, 1, &mut result){
+    match decode(&buffer, offset, opts, 1, result){
         Ok((_, s))=> {
             let e_m = format!("Parsing stopped at offset {}\n", s);
             result.write_all(e_m.as_bytes())?;
@@ -651,17 +645,45 @@ pub fn explains(
             }
         }
         Err(e) => {
-                if let Some((_, message)) = e.to_string().split_once(':') {
-                    let e_m = format!("[ERROR] Parsing stopped: {}\n", message.trim());
-                    result.write_all(e_m.as_bytes())?;
-                }
-                else {
-                    let e_m = format!("[ERROR] Parsing stopped on {}\n", e);
-                    result.write_all(e_m.as_bytes())?;
-                }
+            if let Some((_, message)) = e.to_string().split_once(':') {
+                let e_m = format!("[ERROR] Parsing stopped: {}\n", message.trim());
+                result.write_all(e_m.as_bytes())?;
+            }
+            else {
+                let e_m = format!("[ERROR] Parsing stopped on {}\n", e);
+                result.write_all(e_m.as_bytes())?;
+            }
         }
     }
+    Ok(())
+}
+pub fn explains(
+    buffer: Vec<u8>,
+    offset: usize,
+    max_depth: i32,
+) -> PyResult<String> {
+    let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
+    let mut opts = DecodeOptions::new(real_depth);
+    let mut result: Vec<u8> = Vec::new();
+    _explain(&buffer, offset, &mut opts, &mut result)?;
     Ok(String::from_utf8(result)?)
+}
+
+pub fn explain(
+    file_descriptor: i64,
+    py_file: Py<PyAny>,
+    offset: usize,
+    max_depth: i32,
+) -> PyResult<()> {
+    let file_like = PyFileLikeObject::with_requirements(py_file, false, true, false, false)?;
+    let mut result = BufWriter::new(file_like);
+    let real_depth = if max_depth < 0 { 0 } else { max_depth as u32 };
+    let mut opts = DecodeOptions::new(real_depth);
+    let mmap = bytes_by_file_descriptor(file_descriptor)?;
+    let buffer: &[u8] = &mmap;
+    _explain(buffer, offset, &mut opts, &mut result)?;
+    result.flush()?;
+    Ok(())
 }
 
 #[cfg(test)]

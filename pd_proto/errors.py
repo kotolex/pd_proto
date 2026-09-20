@@ -24,6 +24,12 @@ class BinaryFileError(PDProtoError):
     """
 
 
+class TextFileError(PDProtoError):
+    """
+    Raised for any issues related to the text file.
+    """
+
+
 class EmptyDataError(PDProtoError):
     """
     Raised when the input data is empty.

@@ -36,7 +36,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
-keywords = ["binary", "dump", "protocol", "pd_proto", "PeaceData", "PDProto", "pickle", "serialization", "proto", "buffer", "adler32"]
+keywords = ["binary", "dump", "protocol", "pd_proto", "PeaceData", "PDProto", "pickle", "serialization", "proto", "buffer", "adler32", "explain"]
 dependencies = []
 requires-python = ">=3.8"
 

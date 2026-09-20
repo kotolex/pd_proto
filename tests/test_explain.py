@@ -1,6 +1,9 @@
+import tempfile
+from pathlib import Path
 from unittest import TestCase, main
 
-from pd_proto.load import explains
+from pd_proto.load import explains, explain
+from pd_proto.dump import dump
 
 
 class TestExplain(TestCase):
@@ -229,6 +232,21 @@ Nesting depth 4 exceeded maximum of 3 at offset 5
 """
         result = explains(b'\x01RR=R=Q>?', max_depth=3)
         self.assertEqual(expected, result)
+
+    def test_explain_file(self):
+        data = True
+        expected="""Parsing started at offset 1, total length 2
+-------------- [Offset 1] [Tag 1 / 0x1] [Nesting level 1]---------------
+Boolean True parsed.
+Parsing stopped at offset 2
+"""
+        with tempfile.NamedTemporaryFile() as tmp:
+            dump(tmp, data)
+            tmp.seek(0)
+            with open("some.txt", "wt", encoding="utf-8") as tmp2:
+                explain(tmp, tmp2)
+            read_data = (Path(__file__).parent / "some.txt").read_text()
+        self.assertEqual(read_data, expected)
 
 if __name__ == '__main__':
     main()
