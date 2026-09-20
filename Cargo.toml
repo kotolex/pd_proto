@@ -1,6 +1,6 @@
 [package]
 name = "pd_proto"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -17,4 +17,4 @@ memmap2 = "0.9.11"
 simd-adler32 = "0.3.10"
 
 [dev-dependencies]
-pretty_assertions = "1.4"
+pretty_assertions = "1.4.1"

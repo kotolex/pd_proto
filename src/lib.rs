@@ -37,18 +37,18 @@ mod pd_proto {
     }
 
     #[pyfunction]
-    fn encode_varint(number: u64) -> Vec<u8> {
+    fn encode_varint(number: u64) -> PyResult<Vec<u8>> {
         let mut v = Vec::new();
-        var_int(number, &mut v);
-        v
+        var_int(number, &mut v)?;
+        Ok(v)
     }
 
     #[pyfunction]
-    fn encode_float(value: f64) -> Vec<u8> {
+    fn encode_float(value: f64) -> PyResult<Vec<u8>> {
         let mut v = Vec::new();
         let mut opts = Options::new_default();
-        e_float(value, &mut v, &mut opts);
-        v
+        e_float(value, &mut v, &mut opts)?;
+        Ok(v)
     }
 
     #[pyfunction]

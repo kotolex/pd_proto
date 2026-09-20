@@ -12,7 +12,7 @@ use pyo3::types::{PyDict, PyListMethods};
 use pyo3_file::PyFileLikeObject;
 use std::io::{BufWriter, Write};
 
-pub fn encode_varint<W: Write>(mut number: u64, buffer: &mut W) {
+pub fn encode_varint<W: Write>(mut number: u64, buffer: &mut W) -> PyResult<()> {
     let mut buf = [0u8; 10];
     let mut idx = 0;
     while number >= 0x80 {
@@ -22,51 +22,51 @@ pub fn encode_varint<W: Write>(mut number: u64, buffer: &mut W) {
     }
     buf[idx] = number as u8;
     idx += 1;
-    let _ = buffer.write_all(&buf[..idx]);
+    buffer.write_all(&buf[..idx])?;
+    Ok(())
 }
 
-fn encode_int<W: Write>(num: i64, buffer: &mut W, opts: &mut Options) {
+fn encode_int<W: Write>(num: i64, buffer: &mut W, opts: &mut Options) -> PyResult<()> {
     if num == 0 {
-        let _ = buffer.write_all(&[Variant::IntZero as u8]);
-        return;
+        buffer.write_all(&[Variant::IntZero as u8])?;
+        return Ok(());
     }
     if (1..=13).contains(&num) {
         let tag = INT_INDEX + num as usize; // cause INT_1=61 etc.
-        let _ = buffer.write_all(&[tag as u8]);
-        return;
+        buffer.write_all(&[tag as u8])?;
+        return Ok(());
     }
     match num {
         15 => {
-            let _ = buffer.write_all(&[Variant::Int15 as u8]);
-            return;
+            buffer.write_all(&[Variant::Int15 as u8])?;
+            return Ok(());
         }
         20 => {
-            let _ = buffer.write_all(&[Variant::Int20 as u8]);
-            return;
+            buffer.write_all(&[Variant::Int20 as u8])?;
+            return Ok(());
         }
         24 => {
-            let _ = buffer.write_all(&[Variant::Int24 as u8]);
-            return;
+            buffer.write_all(&[Variant::Int24 as u8])?;
+            return Ok(());
         }
         50 => {
-            let _ = buffer.write_all(&[Variant::Int50 as u8]);
-            return;
+            buffer.write_all(&[Variant::Int50 as u8])?;
+            return Ok(());
         }
         100 => {
-            let _ = buffer.write_all(&[Variant::Int100 as u8]);
-            return;
+            buffer.write_all(&[Variant::Int100 as u8])?;
+            return Ok(());
         }
         1000 => {
-            let _ = buffer.write_all(&[Variant::Int1000 as u8]);
-            return;
+            buffer.write_all(&[Variant::Int1000 as u8])?;
+            return Ok(());
         }
         _ => (),
     }
     match opts.get_int_index(num) {
         Some(index) => {
-            let _ = buffer.write_all(&[Variant::CacheInt as u8]);
-            let _ = buffer.write_all(&[index]);
-            return;
+            buffer.write_all(&[Variant::CacheInt as u8, index])?;
+            return Ok(());
         }
         None => {
             opts.add_int(num);
@@ -78,32 +78,34 @@ fn encode_int<W: Write>(num: i64, buffer: &mut W, opts: &mut Options) {
         Variant::IntPositive
     };
     let r_num: u64 = if num < 0 { -num as u64 } else { num as u64 };
-    let _ = buffer.write_all(&[tag as u8]);
-    encode_varint(r_num, buffer);
+    buffer.write_all(&[tag as u8])?;
+    encode_varint(r_num, buffer)?;
+    Ok(())
 }
 
-fn encode_none<W: Write>(buffer: &mut W) {
-    let _ = buffer.write_all(&[Variant::Null as u8]);
+fn encode_none<W: Write>(buffer: &mut W) -> PyResult<()> {
+    buffer.write_all(&[Variant::Null as u8])?;
+    Ok(())
 }
 
-fn encode_bool<W: Write>(value: bool, buffer: &mut W) {
-    let _ = if value {
-        buffer.write_all(&[Variant::BoolTrue as u8])
+fn encode_bool<W: Write>(value: bool, buffer: &mut W) -> PyResult<()> {
+    if value {
+        buffer.write_all(&[Variant::BoolTrue as u8])?
     } else {
-        buffer.write_all(&[Variant::BoolFalse as u8])
+        buffer.write_all(&[Variant::BoolFalse as u8])?
     };
+    Ok(())
 }
 
-pub fn encode_float<W: Write>(number: f64, buffer: &mut W, opts: &mut Options) {
+pub fn encode_float<W: Write>(number: f64, buffer: &mut W, opts: &mut Options) -> PyResult<()> {
     if number == 0.0 {
-        let _ = buffer.write_all(&[Variant::FloatZero as u8]);
-        return;
+        buffer.write_all(&[Variant::FloatZero as u8])?;
+        return Ok(());
     }
     match opts.get_float_index(number) {
         Some(index) => {
-            let _ = buffer.write_all(&[Variant::CacheFloat as u8]);
-            let _ = buffer.write_all(&[index]);
-            return;
+            buffer.write_all(&[Variant::CacheFloat as u8, index])?;
+            return Ok(());
         }
         None => opts.add_float(number),
     }
@@ -113,22 +115,23 @@ pub fn encode_float<W: Write>(number: f64, buffer: &mut W, opts: &mut Options) {
         if dec_places < 7 {
             let tag = tag_by_decimal_places(dec_places, number < 0.0);
             if dec_places == 0 {
-                let _ = buffer.write_all(&[tag]);
-                encode_varint(r_number as u64, buffer);
-                return;
+                buffer.write_all(&[tag])?;
+                encode_varint(r_number as u64, buffer)?;
+                return Ok(());
             }
             let pow = TEN.pow(dec_places as u32) as f64;
             let limit = opts.float_limit / pow;
             if r_number < limit {
                 let int_value = (r_number * pow).round() as u64;
-                let _ = buffer.write_all(&[tag]);
-                encode_varint(int_value, buffer);
-                return;
+                buffer.write_all(&[tag])?;
+                encode_varint(int_value, buffer)?;
+                return Ok(());
             }
         }
     }
-    let _ = buffer.write_all(&[Variant::Float as u8]);
-    let _ = buffer.write_all(&number.to_be_bytes());
+    buffer.write_all(&[Variant::Float as u8])?;
+    buffer.write_all(&number.to_be_bytes())?;
+    Ok(())
 }
 
 fn encode_datetime<W: Write>(
@@ -142,9 +145,9 @@ fn encode_datetime<W: Write>(
         Some(tz_info) => match tz_info.getattr("key") {
             Ok(key) => {
                 let key_str = key.to_string();
-                let _ = buffer.write_all(&[Variant::DateTimeIana as u8]);
-                encode_float(timestamp, buffer, opts);
-                encode_string(&key_str, buffer, opts);
+                buffer.write_all(&[Variant::DateTimeIana as u8])?;
+                encode_float(timestamp, buffer, opts)?;
+                encode_string(&key_str, buffer, opts)?;
             }
             Err(_) => {
                 let delta: Bound<PyDelta> = tz_info
@@ -152,62 +155,63 @@ fn encode_datetime<W: Write>(
                     .unwrap()
                     .extract()?;
                 let dt_offset: i32 = delta.get_seconds();
-                let _ = buffer.write_all(&[Variant::DateTimeOffset as u8]);
-                encode_float(timestamp, buffer, opts);
-                encode_int(dt_offset as i64, buffer, opts);
+                buffer.write_all(&[Variant::DateTimeOffset as u8])?;
+                encode_float(timestamp, buffer, opts)?;
+                encode_int(dt_offset as i64, buffer, opts)?;
             }
         },
         None => {
-            let _ = buffer.write_all(&[Variant::DateTimeNoTz as u8]);
-            encode_float(timestamp, buffer, opts);
+            buffer.write_all(&[Variant::DateTimeNoTz as u8])?;
+            encode_float(timestamp, buffer, opts)?;
         }
     }
     Ok(())
 }
 
-fn encode_string<W: Write>(value: &str, buffer: &mut W, opts: &mut Options) {
+fn encode_string<W: Write>(value: &str, buffer: &mut W, opts: &mut Options) -> PyResult<()> {
     if value.is_empty() {
-        let _ = buffer.write_all(&[Variant::StringEmpty as u8]);
-        return;
+        buffer.write_all(&[Variant::StringEmpty as u8])?;
+        return Ok(());
     }
     let encoded = value.as_bytes();
     let bytes_len = encoded.len();
     match opts.get_string_index(encoded) {
         Some(index) => {
-            let _ = buffer.write_all(&[Variant::CacheString as u8]);
-            let _ = buffer.write_all(&[index]);
-            return;
+            buffer.write_all(&[Variant::CacheString as u8, index])?;
+            return Ok(());
         }
         None => opts.add_string(encoded),
     }
     if bytes_len <= 15 {
         let tag = STRING_INDEX + bytes_len; // cause STRING_1=31 etc.
-        let _ = buffer.write_all(&[tag as u8]);
-        let _ = buffer.write_all(encoded);
-        return;
+        buffer.write_all(&[tag as u8])?;
+        buffer.write_all(encoded)?;
+        return Ok(());
     }
     if opts.string_length_limit > 0 && bytes_len > opts.string_length_limit {
-        let compressed = compress(encoded).unwrap();
+        let compressed = compress(encoded)?;
         if compressed.len() < bytes_len + 3 {
-            let _ = buffer.write_all(&[Variant::StringCompressed as u8]);
-            encode_varint(compressed.len() as u64, buffer);
-            let _ = buffer.write_all(&compressed);
-            return;
+            buffer.write_all(&[Variant::StringCompressed as u8])?;
+            encode_varint(compressed.len() as u64, buffer)?;
+            buffer.write_all(&compressed)?;
+            return Ok(());
         }
     }
-    let _ = buffer.write_all(&[Variant::String as u8]);
-    encode_varint(bytes_len as u64, buffer);
-    let _ = buffer.write_all(encoded);
+    buffer.write_all(&[Variant::String as u8])?;
+    encode_varint(bytes_len as u64, buffer)?;
+    buffer.write_all(encoded)?;
+    Ok(())
 }
 
-fn encode_bytes<W: Write>(value: &mut [u8], buffer: &mut W) {
+fn encode_bytes<W: Write>(value: &mut [u8], buffer: &mut W) -> PyResult<()> {
     if value.is_empty() {
-        let _ = buffer.write_all(&[Variant::BytesEmpty as u8]);
+        buffer.write_all(&[Variant::BytesEmpty as u8])?;
     } else {
-        let _ = buffer.write_all(&[Variant::Bytes as u8]);
-        encode_varint(value.len() as u64, buffer);
-        let _ = buffer.write_all(value);
+        buffer.write_all(&[Variant::Bytes as u8])?;
+        encode_varint(value.len() as u64, buffer)?;
+        buffer.write_all(value)?;
     }
+    Ok(())
 }
 
 fn encode<W: Write>(
@@ -223,7 +227,7 @@ fn encode<W: Write>(
     let py_type = item.get_type();
     if py_type.is(py.get_type::<PyBool>()) {
         let val: bool = item.extract()?;
-        encode_bool(val, buffer);
+        encode_bool(val, buffer)?;
     } else if py_type.is(py.get_type::<PyDateTime>()) {
         let val = item.cast_into::<PyDateTime>()?;
         encode_datetime(py, val, buffer, opts)?;
@@ -232,18 +236,18 @@ fn encode<W: Write>(
         if val == i64::MIN {
             return Err(PyOverflowError::new_err("[MIN] Integer is out of bounds"));
         }
-        encode_int(val, buffer, opts);
+        encode_int(val, buffer, opts)?;
     } else if py_type.is(py.get_type::<PyFloat>()) {
         let val: f64 = item.extract()?;
-        encode_float(val, buffer, opts);
+        encode_float(val, buffer, opts)?;
     } else if py_type.is(py.get_type::<PyNone>()) {
-        encode_none(buffer);
+        encode_none(buffer)?;
     } else if py_type.is(py.get_type::<PyString>()) {
         let val: &str = item.extract()?;
-        encode_string(val, buffer, opts);
+        encode_string(val, buffer, opts)?;
     } else if py_type.is(py.get_type::<PyBytes>()) {
         let mut val: Vec<u8> = item.extract()?;
-        encode_bytes(&mut val, buffer);
+        encode_bytes(&mut val, buffer)?;
     } else if py_type.is(py.get_type::<PyList>()) {
         let sub_list: &Bound<'_, PyList> = item.cast::<PyList>().unwrap();
         encode_list(py, sub_list, depth + 1, buffer, opts)?;
@@ -272,11 +276,11 @@ fn encode_dict<W: Write>(
     opts: &mut Options,
 ) -> PyResult<()> {
     if list.len() == 0 {
-        let _ = buffer.write_all(&[Variant::DictEmpty as u8]);
+        buffer.write_all(&[Variant::DictEmpty as u8])?;
         return Ok(());
     }
-    let _ = buffer.write_all(&[Variant::Dict as u8]);
-    encode_varint(list.len() as u64, buffer);
+    buffer.write_all(&[Variant::Dict as u8])?;
+    encode_varint(list.len() as u64, buffer)?;
     for (key, value) in list.iter() {
         encode(py, key, buffer, depth, opts)?;
         encode(py, value, buffer, depth, opts)?;
@@ -291,11 +295,11 @@ fn encode_set<W: Write>(
     opts: &mut Options,
 ) -> PyResult<()> {
     if a_set.len() == 0 {
-        let _ = buffer.write_all(&[Variant::SetEmpty as u8]);
+        buffer.write_all(&[Variant::SetEmpty as u8])?;
         return Ok(());
     }
-    let _ = buffer.write_all(&[Variant::Set as u8]);
-    encode_varint(a_set.len() as u64, buffer);
+    buffer.write_all(&[Variant::Set as u8])?;
+    encode_varint(a_set.len() as u64, buffer)?;
     for item in a_set.iter() {
         encode(py, item, buffer, depth, opts)?;
     }
@@ -311,25 +315,25 @@ fn encode_tuple<W: Write>(
 ) -> PyResult<()> {
     let len = a_tuple.len();
     if len == 0 {
-        let _ = buffer.write_all(&[Variant::TupleEmpty as u8]);
+        buffer.write_all(&[Variant::TupleEmpty as u8])?;
         return Ok(());
     }
     match len {
         2 => {
-            let _ = buffer.write_all(&[Variant::Tuple2 as u8]);
+            buffer.write_all(&[Variant::Tuple2 as u8])?;
         }
         3 => {
-            let _ = buffer.write_all(&[Variant::Tuple3 as u8]);
+            buffer.write_all(&[Variant::Tuple3 as u8])?;
         }
         4 => {
-            let _ = buffer.write_all(&[Variant::Tuple4 as u8]);
+            buffer.write_all(&[Variant::Tuple4 as u8])?;
         }
         5 => {
-            let _ = buffer.write_all(&[Variant::Tuple5 as u8]);
+            buffer.write_all(&[Variant::Tuple5 as u8])?;
         }
         _ => {
-            let _ = buffer.write_all(&[Variant::Tuple as u8]);
-            encode_varint(a_tuple.len() as u64, buffer);
+            buffer.write_all(&[Variant::Tuple as u8])?;
+            encode_varint(a_tuple.len() as u64, buffer)?;
         }
     }
     for item in a_tuple.iter() {
@@ -347,16 +351,16 @@ fn encode_list<W: Write>(
 ) -> PyResult<()> {
     let len = list.len();
     if len == 0 {
-        let _ = buffer.write_all(&[Variant::ListEmpty as u8]);
+        buffer.write_all(&[Variant::ListEmpty as u8])?;
         return Ok(());
     }
     match len {
         x if x > 0 && x <= 10 => {
-            let _ = buffer.write_all(&[(len + LIST_INDEX) as u8]);
+            buffer.write_all(&[(len + LIST_INDEX) as u8])?;
         }
         _ => {
-            let _ = buffer.write_all(&[Variant::List as u8]);
-            encode_varint(len as u64, buffer);
+            buffer.write_all(&[Variant::List as u8])?;
+            encode_varint(len as u64, buffer)?;
         }
     }
     for item in list.iter() {
