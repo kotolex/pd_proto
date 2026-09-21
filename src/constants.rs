@@ -3,7 +3,6 @@
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 
-pub const STRING_INDEX: usize = 40; // cause optimized strings starts with 41
 pub const INT_INDEX: usize = 60; // cause optimized ints starts with 61
 pub const LIST_INDEX: usize = 80; // cause optimized lists starts with 81
 pub const FLOAT_DEFAULT_LIMIT: f64 = 268_435_455.0; // see Protocol Specification
@@ -107,6 +106,132 @@ pub enum Variant {
     List10 = 90,
 }
 
+impl Variant {
+    pub const NULL_TAG: [u8; 1] = [Variant::Null as u8];
+    pub const BOOL_TRUE_TAG: [u8; 1] = [Variant::BoolTrue as u8];
+    pub const BOOL_FALSE_TAG: [u8; 1] = [Variant::BoolFalse as u8];
+    pub const INT_POSITIVE_TAG: [u8; 1] = [Variant::IntPositive as u8];
+    pub const INT_NEGATIVE_TAG: [u8; 1] = [Variant::IntNegative as u8];
+    pub const INT_ZERO_TAG: [u8; 1] = [Variant::IntZero as u8];
+    pub const FLOAT_ZERO_TAG: [u8; 1] = [Variant::FloatZero as u8];
+    pub const STRING_EMPTY_TAG: [u8; 1] = [Variant::StringEmpty as u8];
+    pub const BYTES_EMPTY_TAG: [u8; 1] = [Variant::BytesEmpty as u8];
+    pub const DICT_EMPTY_TAG: [u8; 1] = [Variant::DictEmpty as u8];
+    pub const SET_EMPTY_TAG: [u8; 1] = [Variant::SetEmpty as u8];
+    pub const TUPLE_EMPTY_TAG: [u8; 1] = [Variant::TupleEmpty as u8];
+    pub const LIST_EMPTY_TAG: [u8; 1] = [Variant::ListEmpty as u8];
+    pub const BYTES_TAG: [u8; 1] = [Variant::Bytes as u8];
+    pub const TUPLE_TAG: [u8; 1] = [Variant::Tuple as u8];
+    pub const TUPLE_TAG2: [u8; 1] = [Variant::Tuple2 as u8];
+    pub const TUPLE_TAG3: [u8; 1] = [Variant::Tuple3 as u8];
+    pub const TUPLE_TAG4: [u8; 1] = [Variant::Tuple4 as u8];
+    pub const TUPLE_TAG5: [u8; 1] = [Variant::Tuple5 as u8];
+    pub const SET_TAG: [u8; 1] = [Variant::Set as u8];
+    pub const DICT_TAG: [u8; 1] = [Variant::Dict as u8];
+    pub const STRING_COMPRESSED_TAG: [u8; 1] = [Variant::StringCompressed as u8];
+    pub const STRING_TAG: [u8; 1] = [Variant::String as u8];
+    pub const LIST_TAG: [u8; 1] = [Variant::List as u8];
+    pub const INT_TAG1: [u8; 1] = [Variant::Int1 as u8];
+    pub const INT_TAG2: [u8; 1] = [Variant::Int2 as u8];
+    pub const INT_TAG3: [u8; 1] = [Variant::Int3 as u8];
+    pub const INT_TAG4: [u8; 1] = [Variant::Int4 as u8];
+    pub const INT_TAG5: [u8; 1] = [Variant::Int5 as u8];
+    pub const INT_TAG6: [u8; 1] = [Variant::Int6 as u8];
+    pub const INT_TAG7: [u8; 1] = [Variant::Int7 as u8];
+    pub const INT_TAG8: [u8; 1] = [Variant::Int8 as u8];
+    pub const INT_TAG9: [u8; 1] = [Variant::Int9 as u8];
+    pub const INT_TAG10: [u8; 1] = [Variant::Int10 as u8];
+    pub const INT_TAG11: [u8; 1] = [Variant::Int11 as u8];
+    pub const INT_TAG12: [u8; 1] = [Variant::Int12 as u8];
+    pub const INT_TAG13: [u8; 1] = [Variant::Int13 as u8];
+    pub const INT_TAG15: [u8; 1] = [Variant::Int15 as u8];
+    pub const INT_TAG20: [u8; 1] = [Variant::Int20 as u8];
+    pub const INT_TAG24: [u8; 1] = [Variant::Int24 as u8];
+    pub const INT_TAG50: [u8; 1] = [Variant::Int50 as u8];
+    pub const INT_TAG100: [u8; 1] = [Variant::Int100 as u8];
+    pub const INT_TAG1000: [u8; 1] = [Variant::Int1000 as u8];
+    pub const DT_IANA_TAG: [u8; 1] = [Variant::DateTimeIana as u8];
+    pub const DT_OFFSET: [u8; 1] = [Variant::DateTimeOffset as u8];
+    pub const DT_NAIVE: [u8; 1] = [Variant::DateTimeNoTz as u8];
+    pub const STRING_TAG1: [u8; 1] = [Variant::String1 as u8];
+    pub const STRING_TAG2: [u8; 1] = [Variant::String2 as u8];
+    pub const STRING_TAG3: [u8; 1] = [Variant::String3 as u8];
+    pub const STRING_TAG4: [u8; 1] = [Variant::String4 as u8];
+    pub const STRING_TAG5: [u8; 1] = [Variant::String5 as u8];
+    pub const STRING_TAG6: [u8; 1] = [Variant::String6 as u8];
+    pub const STRING_TAG7: [u8; 1] = [Variant::String7 as u8];
+    pub const STRING_TAG8: [u8; 1] = [Variant::String8 as u8];
+    pub const STRING_TAG9: [u8; 1] = [Variant::String9 as u8];
+    pub const STRING_TAG10: [u8; 1] = [Variant::String10 as u8];
+    pub const STRING_TAG11: [u8; 1] = [Variant::String11 as u8];
+    pub const STRING_TAG12: [u8; 1] = [Variant::String12 as u8];
+    pub const STRING_TAG13: [u8; 1] = [Variant::String13 as u8];
+    pub const STRING_TAG14: [u8; 1] = [Variant::String14 as u8];
+    pub const STRING_TAG15: [u8; 1] = [Variant::String15 as u8];
+    pub const LIST_TAG1: [u8; 1] = [Variant::List1 as u8];
+    pub const LIST_TAG2: [u8; 1] = [Variant::List2 as u8];
+    pub const LIST_TAG3: [u8; 1] = [Variant::List3 as u8];
+    pub const LIST_TAG4: [u8; 1] = [Variant::List4 as u8];
+    pub const LIST_TAG5: [u8; 1] = [Variant::List5 as u8];
+    pub const LIST_TAG6: [u8; 1] = [Variant::List6 as u8];
+    pub const LIST_TAG7: [u8; 1] = [Variant::List7 as u8];
+    pub const LIST_TAG8: [u8; 1] = [Variant::List8 as u8];
+    pub const LIST_TAG9: [u8; 1] = [Variant::List9 as u8];
+    pub const LIST_TAG10: [u8; 1] = [Variant::List10 as u8];
+
+    pub fn opt_int_tag(index: i64) -> [u8; 1] {
+        match index {
+            1 => Self::INT_TAG1,
+            2 => Self::INT_TAG2,
+            3 => Self::INT_TAG3,
+            4 => Self::INT_TAG4,
+            5 => Self::INT_TAG5,
+            6 => Self::INT_TAG6,
+            7 => Self::INT_TAG7,
+            8 => Self::INT_TAG8,
+            9 => Self::INT_TAG9,
+            10 => Self::INT_TAG10,
+            11 => Self::INT_TAG11,
+            12 => Self::INT_TAG12,
+            _ => Self::INT_TAG13,
+        }
+    }
+
+    pub fn opt_string_tag(index: usize) -> [u8; 1] {
+        match index {
+            1 => Self::STRING_TAG1,
+            2 => Self::STRING_TAG2,
+            3 => Self::STRING_TAG3,
+            4 => Self::STRING_TAG4,
+            5 => Self::STRING_TAG5,
+            6 => Self::STRING_TAG6,
+            7 => Self::STRING_TAG7,
+            8 => Self::STRING_TAG8,
+            9 => Self::STRING_TAG9,
+            10 => Self::STRING_TAG10,
+            11 => Self::STRING_TAG11,
+            12 => Self::STRING_TAG12,
+            13 => Self::STRING_TAG13,
+            14 => Self::STRING_TAG14,
+            _ => Self::STRING_TAG15,
+        }
+    }
+
+    pub fn opt_list_tag(index: usize) -> [u8; 1] {
+        match index {
+            1 => Self::LIST_TAG1,
+            2 => Self::LIST_TAG2,
+            3 => Self::LIST_TAG3,
+            4 => Self::LIST_TAG4,
+            5 => Self::LIST_TAG5,
+            6 => Self::LIST_TAG6,
+            7 => Self::LIST_TAG7,
+            8 => Self::LIST_TAG8,
+            9 => Self::LIST_TAG9,
+            _ => Self::LIST_TAG10,
+        }
+    }
+}
 impl From<Variant> for u8 {
     #[inline(always)]
     fn from(variant: Variant) -> Self {
